@@ -887,3 +887,256 @@ body {
     animation: none;
   }
 }
+
+/* ==========================================================================
+   Admin dashboard — Sonic dressing
+   Additive only: every selector here is new, none of the existing dashboard
+   rules are edited, and all of it is scoped to .admin-dashboard so the login
+   page is untouched. Same vocabulary as the registration form — gold ring
+   bullets, a finish-line checker, Green Hill ground.
+   ========================================================================== */
+
+/* Sky instead of graph paper: the grid is gone, replaced by a wash and a row
+   of drifting pixel clouds — same construction as the login page, just paler
+   and slower so it never fights the data. */
+.admin-surface:has(.admin-dashboard) {
+  --dash-cloud-far: 360px;
+  --dash-cloud-far-y: 46%;
+
+  background-color: #bfe4ff;
+  background-image:
+    /* one cloud row, kept low — the header area stays clear behind the logo */
+    linear-gradient(90deg, transparent 0 10%, #e4f4ff 10% 24.7%, transparent 24.7%),
+    linear-gradient(90deg, transparent 0 5.3%, #e4f4ff 5.3% 30.7%, transparent 30.7%),
+    linear-gradient(90deg, transparent 0 2%, #e4f4ff 2% 34.7%, transparent 34.7%),
+    /* sky */
+    linear-gradient(180deg, #86caff 0, #b6e2ff 45%, #dcf2ff 100%);
+  /* fixed, so the sky sits behind the page instead of scrolling away and
+     leaving the lower half plain */
+  background-attachment: fixed;
+  background-repeat: repeat-x, repeat-x, repeat-x, no-repeat;
+  background-size:
+    var(--dash-cloud-far) 10px, var(--dash-cloud-far) 10px, var(--dash-cloud-far) 10px,
+    100% 100%;
+  background-position:
+    0 var(--dash-cloud-far-y),
+    0 calc(var(--dash-cloud-far-y) + 10px),
+    0 calc(var(--dash-cloud-far-y) + 20px),
+    0 0;
+  animation: dash-drift 90s linear infinite;
+}
+
+@keyframes dash-drift {
+  from {
+    background-position:
+      0 var(--dash-cloud-far-y),
+      0 calc(var(--dash-cloud-far-y) + 10px),
+      0 calc(var(--dash-cloud-far-y) + 20px),
+      0 0;
+  }
+  to {
+    background-position:
+      var(--dash-cloud-far) var(--dash-cloud-far-y),
+      var(--dash-cloud-far) calc(var(--dash-cloud-far-y) + 10px),
+      var(--dash-cloud-far) calc(var(--dash-cloud-far-y) + 20px),
+      0 0;
+  }
+}
+
+/* the kicker was tuned for a white page — darken it now that it sits on sky */
+.admin-dashboard .section-kicker { color: #0a4ba4; }
+
+@media (max-width: 620px) {
+  .admin-surface:has(.admin-dashboard) {
+    --dash-cloud-far: 200px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-surface:has(.admin-dashboard) { animation: none; }
+}
+
+/* Bigger brand lockup — the header grows with it so the spacing stays even */
+.admin-dashboard .admin-header {
+  min-height: 158px;
+  /* breathing room so the line clears the bottom of the logo */
+  padding-bottom: 30px;
+}
+
+.admin-dashboard .brand-lockup img {
+  width: 232px;
+}
+
+@media (max-width: 620px) {
+  .admin-dashboard .admin-header { min-height: 104px; }
+  .admin-dashboard .brand-lockup img { width: 150px; }
+}
+
+/* Scaled up to sit with the bigger logo. Only the header's own buttons — the
+   Export CSV button elsewhere on the page keeps its original size. */
+.admin-dashboard .brand-lockup span {
+  padding: 9px 15px;
+  color: #10244a;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.admin-dashboard .admin-header .ghost-button {
+  padding: 16px 26px;
+  color: #10244a;
+  font-size: 19px;
+  box-shadow: 5px 5px 0 #d8e8fa;
+}
+
+@media (max-width: 620px) {
+  .admin-dashboard .admin-header .ghost-button {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Drop the ring-and-dots doodle next to the DASHBOARD title */
+.admin-dashboard .dashboard-heading::after {
+  display: none;
+}
+
+/* Stat card accents → the four Sonic colours, deepened: Sonic blue, ring gold,
+   emerald green and shoe red. Everything on the card (edge, icon, ring) is
+   mixed from --accent, so these four lines redo all of it. */
+.admin-dashboard .stat-card.blue { --accent: #0e50c0; }
+.admin-dashboard .stat-card.yellow { --accent: #c98f12; }
+.admin-dashboard .stat-card.green { --accent: #16855a; }
+.admin-dashboard .stat-card.violet { --accent: #b3261e; }
+
+/* less white in the mix so the edge actually reads as the colour */
+.admin-dashboard .stat-card {
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--accent), white 28%);
+}
+
+/* Only-one-day flag, and the team roster line under the badges */
+.admin-dashboard .badges .partial-badge {
+  border-color: #ffcf00;
+  color: #8a5b00;
+  background: #fff8e0;
+}
+
+.admin-dashboard .team-roster {
+  margin: -6px 0 14px;
+  color: #5f7392;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* Five tabs instead of three — let them wrap and tighten the padding a little
+   so they still fit beside the search box */
+.admin-dashboard .filter-tabs {
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.admin-dashboard .filter-tabs button {
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+/* Type bumped a step across the dashboard. Spacing is left alone — these are
+   the small labels that were hardest to read, not the headings. */
+.admin-dashboard .section-kicker { font-size: 13px; }
+.admin-dashboard .dashboard-heading > div > p:last-child { font-size: 16px; }
+
+.admin-dashboard .stat-card p { font-size: 13px; }
+.admin-dashboard .stat-card strong { font-size: 42px; }
+.admin-dashboard .stat-card small { font-size: 14px; }
+
+.admin-dashboard .panel-title h2 { font-size: 31px; }
+.admin-dashboard .panel-title h2 span { font-size: 13px; }
+.admin-dashboard .csv-button { font-size: 14px; }
+
+.admin-dashboard .search-box { font-size: 16px; }
+.admin-dashboard .filter-tabs button { font-size: 13px; }
+
+/* the pixel face gets illegible below ~18px, so the participant card runs
+   noticeably larger than the rest of the page */
+.admin-dashboard .participant-main h3 { font-size: 21px; line-height: 1.35; }
+.admin-dashboard .participant-main p { font-size: 16px; }
+.admin-dashboard .participant-main small { font-size: 15px; }
+.admin-dashboard .badges span { font-size: 13px; }
+.admin-dashboard .card-actions button { font-size: 13px; }
+
+.admin-dashboard .empty-state p { font-size: 14px; }
+
+/* the modal is portalled outside .admin-dashboard, so it is matched directly */
+.participant-modal h2 { font-size: 27px; }
+.participant-modal label { font-size: 14px; }
+
+/* Solid pixel rule under the header, with a lighter step beneath it so the
+   edge reads as sprite art rather than a hairline border */
+.admin-dashboard .admin-header::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 7px;
+  background: #10244a;
+  box-shadow: 0 4px 0 rgba(16, 36, 74, 0.18);
+}
+
+/* Gold ring bullet on the section kickers, like the form's field labels */
+.admin-dashboard .section-kicker::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  background: #ffcf00;
+  box-shadow: inset 0 0 0 2px #b57f00;
+}
+
+/* Green Hill ground closing off the page. Full-bleed via the percentage
+   margin trick (not 100vw, which would overflow by the scrollbar width), and
+   the negative bottom margin swallows the container's padding so it sits
+   flush with the bottom of the page. */
+.admin-dashboard::after {
+  content: "";
+  display: block;
+  height: 132px;
+  margin: 64px calc(50% - 50vw) -80px;
+  background-image:
+    /* blades breaking the top edge */
+    linear-gradient(90deg,
+      transparent 0 15.6%, #8ae71a 15.6% 34.4%,
+      transparent 34.4% 59.4%, #8ae71a 59.4% 71.9%,
+      transparent 71.9% 87.5%, #8ae71a 87.5% 100%),
+    /* grass: lit lip, body, shaded underside */
+    linear-gradient(#8ae71a 0 0),
+    linear-gradient(#4cae04 0 0),
+    linear-gradient(#1c6d08 0 0),
+    /* the landing page's checkered soil */
+    repeating-conic-gradient(#7f3002 0% 25%, #300401 0% 50%);
+  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat, repeat;
+  background-size:
+    26px 6px,
+    100% 8px, 100% 22px, 100% 30px,
+    52px 52px;
+  background-position:
+    0 0,
+    0 6px, 0 6px, 0 6px,
+    0 36px;
+}
+
+@media (max-width: 620px) {
+  .admin-dashboard::after {
+    height: 96px;
+    margin-top: 44px;
+    background-size:
+      20px 5px,
+      100% 6px, 100% 16px, 100% 22px,
+      38px 38px;
+    background-position:
+      0 0,
+      0 5px, 0 5px, 0 5px,
+      0 27px;
+  }
+}

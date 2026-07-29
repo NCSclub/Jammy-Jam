@@ -1,33 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { logout } from "./actions";
+import {
+  deleteParticipant,
+  exportRows,
+  logout,
+  saveParticipant,
+  setCheckedIn,
+} from "./actions";
+import type { Participant } from "./types";
 
-type Participant = {
-  id: number;
-  name: string;
-  email: string;
-  university: string;
-  level: string;
-  team: string | null;
-  staying: boolean;
-  checkedIn: boolean;
-};
+type Filter = "all" | "solo" | "2" | "3" | "4";
 
-const INITIAL_PARTICIPANTS: Participant[] = [
-  { id: 1, name: "Lina Amrane", email: "lina.amrane@example.com", university: "ESI Algiers", level: "L3", team: "Pixel Forge", staying: true, checkedIn: true },
-  { id: 2, name: "Yacine Boudiaf", email: "yacine.b@example.com", university: "USTHB", level: "M1", team: "Pixel Forge", staying: true, checkedIn: false },
-  { id: 3, name: "Sara Benali", email: "sara.benali@example.com", university: "Numidia Institute", level: "L2", team: null, staying: false, checkedIn: false },
-  { id: 4, name: "Mehdi Khelifi", email: "mehdi.k@example.com", university: "ESI SBA", level: "L3", team: "Blue Rings", staying: true, checkedIn: true },
-  { id: 5, name: "Nour El Houda", email: "nour.h@example.com", university: "University of Blida", level: "M2", team: null, staying: false, checkedIn: false },
-  { id: 6, name: "Anis Rahmani", email: "anis.r@example.com", university: "ENSIA", level: "L2", team: "Blue Rings", staying: true, checkedIn: false },
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "all", label: "all" },
+  { value: "solo", label: "solo" },
+  { value: "2", label: "team of 2" },
+  { value: "3", label: "team of 3" },
+  { value: "4", label: "team of 4" },
 ];
 
-type Filter = "all" | "teams" | "solo";
-
-export function Dashboard() {
-  const [participants, setParticipants] = useState(INITIAL_PARTICIPANTS);
+export function Dashboard({ participants }: { participants: Participant[] }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Participant | null>(null);
@@ -42,8 +39,8 @@ export function Dashboard() {
     return participants.filter((participant) => {
       const matchesFilter =
         filter === "all" ||
-        (filter === "teams" && participant.team) ||
-        (filter === "solo" && !participant.team);
+        (filter === "solo" && !participant.team) ||
+        (filter !== "solo" && participant.teamSize === Number(filter));
       const matchesSearch =
         !needle ||
         [participant.name, participant.email, participant.team, participant.university]
@@ -62,41 +59,57 @@ export function Dashboard() {
     setShowForm(true);
   }
 
-  function saveParticipant(formData: FormData) {
-    const participant: Participant = {
-      id: editing?.id ?? Date.now(),
-      name: String(formData.get("name")),
-      email: String(formData.get("email")),
-      university: String(formData.get("university")),
-      level: String(formData.get("level")),
-      team: String(formData.get("team") || "").trim() || null,
-      staying: formData.get("staying") === "on",
-      checkedIn: editing?.checkedIn ?? false,
-    };
-
-    setParticipants((current) =>
-      editing
-        ? current.map((item) => item.id === participant.id ? participant : item)
-        : [participant, ...current],
-    );
-    setShowForm(false);
+  /* every mutation writes to Supabase, then router.refresh() re-runs the
+     server component so the list and the stat cards reflect the new truth */
+  function run(work: () => Promise<void>) {
+    startTransition(async () => {
+      try {
+        await work();
+        router.refresh();
+      } catch (error) {
+        window.alert(
+          error instanceof Error ? error.message : "Something went wrong",
+        );
+      }
+    });
   }
 
+  function handleSave(formData: FormData) {
+    run(async () => {
+      await saveParticipant({
+        id: editing?.id ?? null,
+        name: String(formData.get("name")),
+        email: String(formData.get("email")),
+        university: String(formData.get("university")),
+        level: String(formData.get("level")),
+        team: String(formData.get("team") || "").trim() || null,
+        staying: formData.get("staying") === "on",
+      });
+      setShowForm(false);
+    });
+  }
+
+  /* pulls every column from the database, not just what the cards render */
   function exportCsv() {
-    const header = ["Name", "Email", "University", "Level", "Team", "Overnight", "Checked in"];
-    const rows = participants.map((p) => [
-      p.name, p.email, p.university, p.level, p.team ?? "Solo",
-      p.staying ? "Yes" : "No", p.checkedIn ? "Yes" : "No",
-    ]);
-    const csv = [header, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
-      .join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "jammy-jam-registrations.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    run(async () => {
+      const rows = await exportRows();
+      const csv = rows
+        .map((row) =>
+          row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","),
+        )
+        .join("\n");
+
+      /* BOM so Excel opens accented names correctly */
+      const blob = new Blob(["﻿" + csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "jammy-jam-registrations.csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
   return (
@@ -149,13 +162,13 @@ export function Dashboard() {
             />
           </label>
           <div className="filter-tabs" aria-label="Participant type">
-            {(["all", "teams", "solo"] as const).map((item) => (
+            {FILTERS.map((item) => (
               <button
-                key={item}
-                className={filter === item ? "active" : ""}
-                onClick={() => setFilter(item)}
+                key={item.value}
+                className={filter === item.value ? "active" : ""}
+                onClick={() => setFilter(item.value)}
               >
-                {item}
+                {item.label}
               </button>
             ))}
           </div>
@@ -179,22 +192,35 @@ export function Dashboard() {
                 <span className={participant.staying ? "stay-badge" : "muted-badge"}>
                   {participant.staying ? "☾ Staying" : "Going home"}
                 </span>
+                {/* only worth flagging when they are NOT there for both days */}
+                {participant.attendance && participant.attendance !== "both" ? (
+                  <span className="partial-badge">
+                    {participant.attendance} Aug only
+                  </span>
+                ) : null}
               </div>
+              {participant.teamMembers.length ? (
+                <p className="team-roster">
+                  With: {participant.teamMembers.join(", ")}
+                </p>
+              ) : null}
               <div className="card-actions">
                 <button
                   className={participant.checkedIn ? "checked-button" : ""}
-                  onClick={() => setParticipants((current) => current.map((item) =>
-                    item.id === participant.id ? { ...item, checkedIn: !item.checkedIn } : item
-                  ))}
+                  disabled={pending}
+                  onClick={() =>
+                    run(() => setCheckedIn(participant.id, !participant.checkedIn))
+                  }
                 >
                   {participant.checkedIn ? "✓ Checked in" : "Check in"}
                 </button>
                 <button onClick={() => openEdit(participant)}>Edit</button>
                 <button
                   className="delete-button"
+                  disabled={pending}
                   onClick={() => {
                     if (window.confirm(`Delete ${participant.name}?`)) {
-                      setParticipants((current) => current.filter((item) => item.id !== participant.id));
+                      run(() => deleteParticipant(participant.id));
                     }
                   }}
                   aria-label={`Delete ${participant.name}`}
@@ -226,7 +252,7 @@ export function Dashboard() {
             <button className="modal-close" onClick={() => setShowForm(false)} aria-label="Close">×</button>
             <p className="section-kicker">REGISTRATION DETAILS</p>
             <h2 id="participant-form-title">{editing ? "Edit participant" : "Add participant"}</h2>
-            <form action={saveParticipant}>
+            <form action={handleSave}>
               <label>Full name<input name="name" defaultValue={editing?.name} required /></label>
               <label>Email<input name="email" type="email" defaultValue={editing?.email} required /></label>
               <div className="form-row">
