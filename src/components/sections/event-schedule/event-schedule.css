@@ -17,7 +17,9 @@
   position: relative;
   overflow: hidden;
   padding: 150px 24px 120px;
-  /* dark under the ceiling, molten through the middle, dark again at the floor */
+  /* Dark under the ceiling, molten through the middle, then cooling to
+     #010103 — the exact colour the Sponsors section starts on, so the two
+     sections read as one continuous cave with no seam between them. */
   background: linear-gradient(
     180deg,
     #0d0301 0%,
@@ -25,9 +27,10 @@
     #6b1604 30%,
     #b53b06 48%,
     #e8791e 60%,
-    #a82a05 74%,
-    #3d0c02 90%,
-    #160401 100%
+    #a82a05 72%,
+    #4a0f03 84%,
+    #180403 93%,
+    #010103 100%
   );
   font-family: var(--font-sonic-hud), Arial, sans-serif;
 }

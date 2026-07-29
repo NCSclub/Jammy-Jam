@@ -1,0 +1,39 @@
+/* Floating lava orbs and ember sparks, reusing the schedule section's sprites.
+   Purely decorative: absolutely positioned, aria-hidden, never interactive. */
+.lava-decor {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lava-decor img {
+  position: absolute;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.lava-decor .orb {
+  filter: drop-shadow(0 0 8px rgba(255, 70, 15, 0.5));
+  animation: lava-float 5s ease-in-out infinite;
+}
+
+.lava-decor .spark {
+  animation: lava-twinkle 3s steps(2, end) infinite;
+}
+
+@keyframes lava-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes lava-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lava-decor img {
+    animation: none;
+  }
+}

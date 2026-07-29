@@ -1,4 +1,4 @@
-
+import { LavaDecor } from "./lava-decor/lava-decor";
 
 export function Sponsors() {
     return(
@@ -7,6 +7,8 @@ export function Sponsors() {
             aria-label="Our sponsor"
             className="relative min-h-95 scroll-mt-24 overflow-hidden bg-[linear-gradient(180deg,#010103_0%,#030305_27.79%,#380104_48.55%,#4B0308_59.21%,#65040B_66.92%,#811008_76%,#B44902_87.67%,#E67906_100%)] py-20 sm:min-h-140"
         >
+           <LavaDecor />
+
            <div className="section-shell min-h-75 sm:min-h-120">
             <div className="flex items-center justify-center gap-4 sm:gap-14">
             
