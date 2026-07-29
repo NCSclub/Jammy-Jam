@@ -434,6 +434,15 @@ select.jj-input option {
   color: var(--jj-gold);
 }
 
+.jj-squad__note {
+  margin-top: 10px;
+  padding-left: 16px;
+  font-family: var(--jj-font-body), ui-monospace, monospace;
+  font-size: 17px;
+  line-height: 1.3;
+  color: var(--jj-ink-dim);
+}
+
 .jj-squad__title::before {
   content: "";
   flex: none;

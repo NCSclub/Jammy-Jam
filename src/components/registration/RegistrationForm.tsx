@@ -30,6 +30,7 @@ export type RegistrationValues = {
   expectations: string;
   hasTeam: "no" | "yes";
   /* only filled in when hasTeam is "yes" */
+  teamSize: "" | "2" | "3" | "4";
   teamName: string;
   teammate1: string;
   teammate2: string;
@@ -56,22 +57,43 @@ const EMPTY: RegistrationValues = {
   skills: "",
   expectations: "",
   hasTeam: "no",
+  teamSize: "",
   teamName: "",
   teammate1: "",
   teammate2: "",
   teammate3: "",
 };
 
-/** Shown only once the squad question is answered "yes". */
+/** The registrant counts as one, so a team of N needs N-1 names. */
+const TEAM_SIZES = [
+  { value: "2", label: "A team of 2 — me + 1 member" },
+  { value: "3", label: "A team of 3 — me + 2 members" },
+  { value: "4", label: "A team of 4 — me + 3 members" },
+] as const;
+
 const TEAMMATE_FIELDS: {
   name: Extract<FieldName, "teammate1" | "teammate2" | "teammate3">;
   label: string;
-  required?: boolean;
 }[] = [
-  { name: "teammate1", label: "Member 1", required: true },
+  { name: "teammate1", label: "Member 1" },
   { name: "teammate2", label: "Member 2" },
   { name: "teammate3", label: "Member 3" },
 ];
+
+/** How many name fields a chosen size asks for. */
+function memberCount(teamSize: RegistrationValues["teamSize"]) {
+  return teamSize ? Number(teamSize) - 1 : 0;
+}
+
+function clearSquadErrors(current: Partial<Record<FieldName, string>>) {
+  const next = { ...current };
+  delete next.teamSize;
+  delete next.teamName;
+  delete next.teammate1;
+  delete next.teammate2;
+  delete next.teammate3;
+  return next;
+}
 
 /** Single-column text inputs, in the order they appear on the board. */
 const TEXT_FIELDS: {
@@ -143,10 +165,16 @@ function validate(values: RegistrationValues) {
   if (!values.studentId.trim()) errors.studentId = "Enter your student ID";
 
   if (values.hasTeam === "yes") {
+    if (!values.teamSize) errors.teamSize = "Pick your team size";
     if (!values.teamName.trim()) errors.teamName = "Name your squad";
+
+    /* every slot the chosen size asks for has to be filled */
     const roster = [values.teammate1, values.teammate2, values.teammate3];
-    if (roster.every((member) => !member.trim()))
-      errors.teammate1 = "Add at least one member";
+    TEAMMATE_FIELDS.slice(0, memberCount(values.teamSize)).forEach(
+      (field, index) => {
+        if (!roster[index].trim()) errors[field.name] = "Enter this member";
+      },
+    );
   }
 
   return errors;
@@ -181,13 +209,33 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
       ...current,
       hasTeam,
       ...(hasTeam === "no"
-        ? { teamName: "", teammate1: "", teammate2: "", teammate3: "" }
+        ? {
+            teamSize: "" as const,
+            teamName: "",
+            teammate1: "",
+            teammate2: "",
+            teammate3: "",
+          }
         : null),
+    }));
+    setErrors(clearSquadErrors);
+  }
+
+  /* shrinking the team drops the names it no longer asks for */
+  function handleSizeChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const teamSize = event.target.value as RegistrationValues["teamSize"];
+    const slots = memberCount(teamSize);
+    setValues((current) => ({
+      ...current,
+      teamSize,
+      teammate2: slots >= 2 ? current.teammate2 : "",
+      teammate3: slots >= 3 ? current.teammate3 : "",
     }));
     setErrors((current) => {
       const next = { ...current };
-      delete next.teamName;
-      delete next.teammate1;
+      delete next.teamSize;
+      if (slots < 2) delete next.teammate2;
+      if (slots < 3) delete next.teammate3;
       return next;
     });
   }
@@ -221,7 +269,9 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
       <div className="jj-frame jj-cut p-1">
         <div className="jj-frame__bevel jj-cut p-1">
           <div className="jj-frame__body jj-cut">
-            <header className="jj-header px-6 py-7 sm:px-8">
+            {/* deep bottom padding keeps Sonic's head clear of the title —
+                he stands 41px above the checker strip */}
+            <header className="jj-header px-6 pt-7 pb-16 sm:px-8">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="jj-title text-base sm:text-xl">
                   Jammy Jam
@@ -380,7 +430,40 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                   {values.hasTeam === "yes" ? (
                     <div className="jj-squad jj-cut jj-cut--sm p-5">
                       <p className="jj-squad__title">Squad roster</p>
+                      <p className="jj-squad__note">
+                        Pick the total size of your team, yourself included.
+                        You are already registered, so only name the other
+                        members below.
+                      </p>
                       <div className="mt-5 grid gap-5">
+                        <Field
+                          name="teamSize"
+                          label="Team Size"
+                          required
+                          error={errors.teamSize}
+                        >
+                          <div className="jj-select">
+                            <select
+                              id="jj-teamSize"
+                              name="teamSize"
+                              value={values.teamSize}
+                              onChange={handleSizeChange}
+                              aria-invalid={Boolean(errors.teamSize)}
+                              aria-describedby={
+                                errors.teamSize ? "jj-teamSize-error" : undefined
+                              }
+                              className="jj-input jj-cut jj-cut--sm"
+                            >
+                              <option value="">Pick your team size</option>
+                              {TEAM_SIZES.map((size) => (
+                                <option key={size.value} value={size.value}>
+                                  {size.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </Field>
+
                         <Field
                           name="teamName"
                           label="Team Name"
@@ -403,12 +486,15 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                         </Field>
 
                         <div className="grid gap-5">
-                          {TEAMMATE_FIELDS.map((field) => (
+                          {TEAMMATE_FIELDS.slice(
+                            0,
+                            memberCount(values.teamSize),
+                          ).map((field) => (
                             <Field
                               key={field.name}
                               name={field.name}
                               label={field.label}
-                              required={field.required}
+                              required
                               error={errors[field.name]}
                             >
                               <input
