@@ -1,0 +1,417 @@
+/* ==========================================================================
+   JAMMY JAM — registration form skin
+   Layout lives in Tailwind classes; everything pixel-art lives here.
+   ========================================================================== */
+
+.jj-form {
+  /* one "pixel" of the art grid — every border/offset is a multiple of it */
+  --jj-u: 4px;
+
+  --jj-navy-900: #070a33;
+  --jj-navy-800: #10164f;
+  --jj-navy-700: #1d2394;
+  --jj-blue-500: #3a4bd6;
+  --jj-blue-300: #7fd4f5;
+  --jj-cyan: #35e0f2;
+  --jj-cyan-700: #1b7f96;
+  --jj-gold: #ffd93b;
+  --jj-gold-700: #b57f00;
+  --jj-red: #ff4d4d;
+  --jj-red-700: #a01d1d;
+  --jj-green: #3fd23f;
+  --jj-green-700: #1d7a1d;
+  --jj-ink: #eaf1ff;
+  --jj-ink-dim: #8f9ede;
+
+  color: var(--jj-ink);
+  font-family: var(--jj-font-body), ui-monospace, "Courier New", monospace;
+}
+
+/* --------------------------------------------------------------------------
+   Stepped "pixel rounded" corners.
+   Cuts two staircase steps out of each corner so the box reads as sprite art
+   instead of a CSS box. --a is the inner step, --b the outer one.
+   -------------------------------------------------------------------------- */
+.jj-cut {
+  --a: 8px;
+  --b: 16px;
+  clip-path: polygon(
+    0 var(--b), var(--a) var(--b), var(--a) var(--a), var(--b) var(--a), var(--b) 0,
+    calc(100% - var(--b)) 0, calc(100% - var(--b)) var(--a), calc(100% - var(--a)) var(--a),
+    calc(100% - var(--a)) var(--b), 100% var(--b),
+    100% calc(100% - var(--b)), calc(100% - var(--a)) calc(100% - var(--b)),
+    calc(100% - var(--a)) calc(100% - var(--a)), calc(100% - var(--b)) calc(100% - var(--a)),
+    calc(100% - var(--b)) 100%,
+    var(--b) 100%, var(--b) calc(100% - var(--a)), var(--a) calc(100% - var(--a)),
+    var(--a) calc(100% - var(--b)), 0 calc(100% - var(--b))
+  );
+}
+
+.jj-cut--sm {
+  --a: 4px;
+  --b: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   The signboard: dark outline > cyan bevel > navy panel, like the About board
+   -------------------------------------------------------------------------- */
+.jj-frame {
+  background: var(--jj-navy-900);
+  /* drop-shadow (not box-shadow) so the shadow follows the stepped corners */
+  filter: drop-shadow(0 8px 0 rgba(4, 6, 32, 0.55));
+}
+
+.jj-frame__bevel {
+  background: linear-gradient(180deg, var(--jj-blue-300) 0%, var(--jj-cyan-700) 100%);
+}
+
+.jj-frame__body {
+  position: relative;
+  background: linear-gradient(180deg, var(--jj-navy-700) 0%, var(--jj-navy-800) 55%, var(--jj-navy-900) 100%);
+}
+
+/* CRT scanlines over the panel */
+.jj-frame__body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.045) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Header — speed lines dashing behind the title
+   -------------------------------------------------------------------------- */
+.jj-header {
+  position: relative;
+  overflow: hidden;
+  background: rgba(7, 10, 51, 0.55);
+}
+
+.jj-header::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(53, 224, 242, 0.16) 0 6px,
+    transparent 6px 28px
+  );
+  animation: jj-dash 1.1s linear infinite;
+}
+
+.jj-header > * {
+  position: relative;
+}
+
+@keyframes jj-dash {
+  from { background-position: 0 0; }
+  to { background-position: -34px 0; }
+}
+
+.jj-title {
+  font-family: var(--jj-font-pixel), monospace;
+  color: var(--jj-gold);
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 4px 0 var(--jj-gold-700),
+    0 8px 0 rgba(4, 6, 32, 0.75);
+}
+
+.jj-subtitle {
+  font-family: var(--jj-font-pixel), monospace;
+  color: var(--jj-blue-300);
+  letter-spacing: 0.08em;
+}
+
+/* Pixel calendar glyph, drawn with gradients — no image needed */
+.jj-cal {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background:
+    linear-gradient(var(--jj-red) 0 0) 0 0 / 100% 4px no-repeat,
+    linear-gradient(var(--jj-ink) 0 0) 0 0 / 100% 100% no-repeat;
+  box-shadow: 0 0 0 2px var(--jj-navy-900);
+}
+
+/* Sonic finish-line strip */
+.jj-checker {
+  height: 12px;
+  background-image: conic-gradient(
+    #f4f7ff 0 25%,
+    #0b0e3a 0 50%,
+    #f4f7ff 0 75%,
+    #0b0e3a 0
+  );
+  background-size: 12px 12px;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Labels — a gold ring bullet that spins while the field has focus
+   -------------------------------------------------------------------------- */
+.jj-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--jj-blue-300);
+}
+
+.jj-label::before {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--jj-gold);
+  box-shadow: inset 0 0 0 2px var(--jj-gold-700);
+}
+
+.jj-field:focus-within .jj-label {
+  color: var(--jj-cyan);
+}
+
+.jj-field:focus-within .jj-label::before {
+  animation: jj-ring 0.6s steps(3, end) infinite;
+}
+
+@keyframes jj-ring {
+  0%   { transform: scaleX(1); }
+  50%  { transform: scaleX(0.2); }
+  100% { transform: scaleX(1); }
+}
+
+.jj-req {
+  color: var(--jj-red);
+  margin-left: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Inputs — recessed slots cut into the board
+   -------------------------------------------------------------------------- */
+.jj-input {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  outline: 0;
+  background: var(--jj-navy-900);
+  color: var(--jj-ink);
+  font-family: var(--jj-font-body), ui-monospace, monospace;
+  font-size: 20px;
+  line-height: 1.2;
+  box-shadow:
+    inset 0 0 0 3px var(--jj-blue-500),
+    inset 0 3px 0 3px rgba(0, 0, 0, 0.55);
+  transition: box-shadow 0.1s steps(2, end), background-color 0.1s;
+}
+
+.jj-input::placeholder {
+  color: var(--jj-ink-dim);
+  opacity: 1;
+}
+
+.jj-input:hover {
+  background: #0a0e42;
+}
+
+.jj-input:focus {
+  background: #0c1250;
+  box-shadow:
+    inset 0 0 0 3px var(--jj-cyan),
+    inset 0 3px 0 3px rgba(0, 0, 0, 0.55),
+    inset 0 0 12px rgba(53, 224, 242, 0.35);
+}
+
+.jj-input[aria-invalid="true"] {
+  box-shadow:
+    inset 0 0 0 3px var(--jj-red),
+    inset 0 3px 0 3px rgba(0, 0, 0, 0.55);
+}
+
+textarea.jj-input {
+  min-height: 128px;
+  resize: vertical;
+}
+
+/* Select: kill the native arrow, draw a pixel triangle instead */
+select.jj-input {
+  appearance: none;
+  padding-right: 44px;
+  cursor: pointer;
+}
+
+select.jj-input option {
+  background: var(--jj-navy-900);
+  color: var(--jj-ink);
+}
+
+.jj-select {
+  position: relative;
+}
+
+/* 5x3 pixel triangle built from one 4px block + its box-shadow clones */
+.jj-select::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  width: 4px;
+  height: 4px;
+  margin-top: -6px;
+  pointer-events: none;
+  background: var(--jj-gold);
+  box-shadow:
+    -8px 0 0 var(--jj-gold), -4px 0 0 var(--jj-gold),
+     4px 0 0 var(--jj-gold),  8px 0 0 var(--jj-gold),
+    -4px 4px 0 var(--jj-gold), 0 4px 0 var(--jj-gold), 4px 4px 0 var(--jj-gold),
+     0 8px 0 var(--jj-gold);
+}
+
+.jj-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--jj-red);
+  text-transform: uppercase;
+}
+
+.jj-error::before {
+  content: "!";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: var(--jj-red);
+  color: var(--jj-navy-900);
+  animation: jj-blink 0.9s steps(1, end) infinite;
+}
+
+@keyframes jj-blink {
+  50% { opacity: 0.25; }
+}
+
+/* --------------------------------------------------------------------------
+   Buttons — hard 8-bit shadow that collapses when pressed
+   -------------------------------------------------------------------------- */
+.jj-btn {
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 16px 22px;
+  border: 0;
+  cursor: pointer;
+  color: var(--jj-navy-900);
+  background: var(--jj-gold);
+  filter: drop-shadow(0 5px 0 var(--jj-gold-700)) drop-shadow(0 9px 0 rgba(4, 6, 32, 0.5));
+  transition: transform 0.08s steps(2, end), filter 0.08s steps(2, end);
+}
+
+.jj-btn:hover {
+  filter: drop-shadow(0 5px 0 var(--jj-gold-700)) drop-shadow(0 9px 0 rgba(4, 6, 32, 0.5))
+    brightness(1.08);
+}
+
+.jj-btn:active {
+  transform: translateY(5px);
+  filter: drop-shadow(0 0 0 var(--jj-gold-700)) drop-shadow(0 4px 0 rgba(4, 6, 32, 0.5));
+}
+
+/* clip-path eats outlines, so the focus ring is drawn inside */
+.jj-btn:focus-visible {
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.jj-btn:disabled {
+  cursor: wait;
+  filter: grayscale(0.5) brightness(0.9) drop-shadow(0 5px 0 rgba(4, 6, 32, 0.5));
+}
+
+.jj-btn--ghost {
+  color: var(--jj-ink);
+  background: var(--jj-blue-500);
+  filter: drop-shadow(0 5px 0 #1c2586) drop-shadow(0 9px 0 rgba(4, 6, 32, 0.5));
+}
+
+.jj-btn--ghost:hover {
+  filter: drop-shadow(0 5px 0 #1c2586) drop-shadow(0 9px 0 rgba(4, 6, 32, 0.5)) brightness(1.12);
+}
+
+.jj-btn--ghost:active {
+  filter: drop-shadow(0 0 0 #1c2586) drop-shadow(0 4px 0 rgba(4, 6, 32, 0.5));
+}
+
+.jj-close {
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  cursor: pointer;
+  color: #fff;
+  background: var(--jj-red);
+  box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.35), inset 3px 3px 0 rgba(255, 255, 255, 0.25);
+}
+
+.jj-close:hover {
+  background: #ff6a6a;
+}
+
+.jj-close:active {
+  box-shadow: inset 3px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   Post-submit panel
+   -------------------------------------------------------------------------- */
+.jj-done {
+  font-family: var(--jj-font-pixel), monospace;
+  color: var(--jj-gold);
+  letter-spacing: 0.05em;
+  text-shadow: 0 4px 0 var(--jj-gold-700), 0 8px 0 rgba(4, 6, 32, 0.75);
+}
+
+.jj-done__coin {
+  width: 28px;
+  height: 28px;
+  background: var(--jj-gold);
+  box-shadow: inset 0 0 0 5px var(--jj-gold-700);
+  animation: jj-ring 0.7s steps(3, end) infinite;
+}
+
+.jj-hint {
+  font-family: var(--jj-font-body), ui-monospace, monospace;
+  font-size: 18px;
+  line-height: 1.35;
+  color: var(--jj-ink-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-header::before,
+  .jj-field:focus-within .jj-label::before,
+  .jj-error::before,
+  .jj-done__coin {
+    animation: none;
+  }
+
+  .jj-btn {
+    transition: none;
+  }
+}
