@@ -1,9 +1,55 @@
 "use server";
 
+import { headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isRegistrationOpen } from "@/lib/registration-window";
 import type { RegistrationValues } from "@/components/registration/RegistrationForm";
 
+/* Best-effort throttle. It lives in memory, so on serverless it is per
+   instance rather than global — enough to stop a naive script hammering one
+   endpoint, not a distributed flood. The unique email constraint and the
+   honeypot do the rest. */
+const RATE_LIMIT = { max: 5, windowMs: 10 * 60 * 1000 };
+const hits = new Map<string, number[]>();
+
+function rateLimit(ip: string) {
+  const now = Date.now();
+  const recent = (hits.get(ip) ?? []).filter(
+    (at) => now - at < RATE_LIMIT.windowMs,
+  );
+
+  if (recent.length >= RATE_LIMIT.max) return false;
+
+  recent.push(now);
+  hits.set(ip, recent);
+
+  /* keep the map from growing forever on a long-lived instance */
+  if (hits.size > 5000) {
+    for (const [key, times] of hits) {
+      if (!times.some((at) => now - at < RATE_LIMIT.windowMs)) hits.delete(key);
+    }
+  }
+  return true;
+}
+
 export async function submitRegistration(values: RegistrationValues) {
+  if (!isRegistrationOpen()) {
+    throw new Error("Registrations are closed");
+  }
+
+  /* a filled honeypot means a bot: accept silently so it does not retry */
+  if (values.website?.trim()) return;
+
+  const headerList = await headers();
+  const ip =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "unknown";
+
+  if (!rateLimit(ip)) {
+    throw new Error("Too many attempts, wait a few minutes and try again");
+  }
+
   const required = [
     values.firstName,
     values.lastName,

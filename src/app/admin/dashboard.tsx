@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   deleteParticipant,
+  exportRows,
   logout,
   saveParticipant,
   setCheckedIn,
@@ -88,21 +89,27 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
     });
   }
 
+  /* pulls every column from the database, not just what the cards render */
   function exportCsv() {
-    const header = ["Name", "Email", "University", "Level", "Team", "Overnight", "Checked in"];
-    const rows = participants.map((p) => [
-      p.name, p.email, p.university, p.level, p.team ?? "Solo",
-      p.staying ? "Yes" : "No", p.checkedIn ? "Yes" : "No",
-    ]);
-    const csv = [header, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
-      .join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "jammy-jam-registrations.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    run(async () => {
+      const rows = await exportRows();
+      const csv = rows
+        .map((row) =>
+          row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","),
+        )
+        .join("\n");
+
+      /* BOM so Excel opens accented names correctly */
+      const blob = new Blob(["﻿" + csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "jammy-jam-registrations.csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
   return (
@@ -185,7 +192,18 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
                 <span className={participant.staying ? "stay-badge" : "muted-badge"}>
                   {participant.staying ? "☾ Staying" : "Going home"}
                 </span>
+                {/* only worth flagging when they are NOT there for both days */}
+                {participant.attendance && participant.attendance !== "both" ? (
+                  <span className="partial-badge">
+                    {participant.attendance} Aug only
+                  </span>
+                ) : null}
               </div>
+              {participant.teamMembers.length ? (
+                <p className="team-roster">
+                  With: {participant.teamMembers.join(", ")}
+                </p>
+              ) : null}
               <div className="card-actions">
                 <button
                   className={participant.checkedIn ? "checked-button" : ""}

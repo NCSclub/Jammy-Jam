@@ -434,6 +434,15 @@ select.jj-input option {
   color: var(--jj-gold);
 }
 
+/* honeypot: pushed off-canvas, still focusable by a script, invisible to eyes */
+.jj-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .jj-squad__note {
   margin-top: 10px;
   padding-left: 16px;

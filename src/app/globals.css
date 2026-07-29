@@ -1013,6 +1013,20 @@ body {
   box-shadow: 6px 6px 0 color-mix(in srgb, var(--accent), white 28%);
 }
 
+/* Only-one-day flag, and the team roster line under the badges */
+.admin-dashboard .badges .partial-badge {
+  border-color: #ffcf00;
+  color: #8a5b00;
+  background: #fff8e0;
+}
+
+.admin-dashboard .team-roster {
+  margin: -6px 0 14px;
+  color: #5f7392;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
 /* Five tabs instead of three — let them wrap and tighten the padding a little
    so they still fit beside the search box */
 .admin-dashboard .filter-tabs {
@@ -1041,11 +1055,13 @@ body {
 .admin-dashboard .search-box { font-size: 16px; }
 .admin-dashboard .filter-tabs button { font-size: 13px; }
 
-.admin-dashboard .participant-main h3 { font-size: 17px; }
-.admin-dashboard .participant-main p { font-size: 14px; }
-.admin-dashboard .participant-main small { font-size: 13px; }
-.admin-dashboard .badges span { font-size: 12px; }
-.admin-dashboard .card-actions button { font-size: 12px; }
+/* the pixel face gets illegible below ~18px, so the participant card runs
+   noticeably larger than the rest of the page */
+.admin-dashboard .participant-main h3 { font-size: 21px; line-height: 1.35; }
+.admin-dashboard .participant-main p { font-size: 16px; }
+.admin-dashboard .participant-main small { font-size: 15px; }
+.admin-dashboard .badges span { font-size: 13px; }
+.admin-dashboard .card-actions button { font-size: 13px; }
 
 .admin-dashboard .empty-state p { font-size: 14px; }
 

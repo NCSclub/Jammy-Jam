@@ -35,7 +35,7 @@ export async function logout() {
 }
 
 const COLUMNS =
-  "id, first_name, last_name, email, university, level, team_name, team_size, team_members, staying, checked_in";
+  "id, first_name, last_name, email, university, level, team_name, team_size, team_members, attendance, staying, checked_in";
 
 export async function listParticipants(): Promise<Participant[]> {
   const { data, error } = await supabaseAdmin()
@@ -57,9 +57,57 @@ export async function listParticipants(): Promise<Participant[]> {
     teamSize:
       row.team_size ??
       (row.team_members?.length ? row.team_members.length + 1 : null),
+    teamMembers: row.team_members ?? [],
+    attendance: row.attendance,
     staying: row.staying,
     checkedIn: row.checked_in,
   }));
+}
+
+const ATTENDANCE_LABEL: Record<string, string> = {
+  both: "Both days",
+  "13": "13 August only",
+  "14": "14 August only",
+};
+
+/** Everything in the table, not just what the cards show. */
+export async function exportRows(): Promise<string[][]> {
+  const { data, error } = await supabaseAdmin()
+    .from("registrations")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  const header = [
+    "Registered at", "First name", "Last name", "Email", "Phone", "Discord",
+    "University", "Student ID", "Level", "Skills", "Expectations",
+    "Attendance", "Overnight", "Team", "Team size", "Team members",
+    "Checked in", "Checked in at",
+  ];
+
+  const rows = (data ?? []).map((row) => [
+    row.created_at ?? "",
+    row.first_name ?? "",
+    row.last_name ?? "",
+    row.email ?? "",
+    row.phone ?? "",
+    row.discord ?? "",
+    row.university ?? "",
+    row.student_id ?? "",
+    row.level ?? "",
+    row.skills ?? "",
+    row.expectations ?? "",
+    row.attendance ? (ATTENDANCE_LABEL[row.attendance] ?? row.attendance) : "",
+    row.staying ? "Yes" : "No",
+    row.team_name ?? "Solo",
+    row.team_size ? String(row.team_size) : "",
+    (row.team_members ?? []).join(" | "),
+    row.checked_in ? "Yes" : "No",
+    row.checked_in_at ?? "",
+  ]);
+
+  return [header, ...rows];
 }
 
 export async function setCheckedIn(id: string, checkedIn: boolean) {

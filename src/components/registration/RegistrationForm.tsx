@@ -31,6 +31,8 @@ export type RegistrationValues = {
   expectations: string;
   attendance: "" | "both" | "13" | "14";
   staying: "no" | "yes";
+  /** Honeypot: hidden from people, catnip for bots. Must arrive empty. */
+  website: string;
   hasTeam: "no" | "yes";
   /* only filled in when hasTeam is "yes" */
   teamSize: "" | "2" | "3" | "4";
@@ -62,6 +64,7 @@ const EMPTY: RegistrationValues = {
   expectations: "",
   attendance: "",
   staying: "no",
+  website: "",
   hasTeam: "no",
   teamSize: "",
   teamName: "",
@@ -343,6 +346,21 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                 onSubmit={handleSubmit}
                 className="px-6 py-7 sm:px-8"
               >
+                {/* honeypot — off-screen rather than display:none, which some
+                    bots know to skip. Never shown to a real user. */}
+                <div aria-hidden="true" className="jj-trap">
+                  <label htmlFor="jj-website">Website</label>
+                  <input
+                    id="jj-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={values.website}
+                    onChange={update("website")}
+                  />
+                </div>
+
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field
                     name="firstName"
