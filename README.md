@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jammy Jam — Landing Page
 
-## Getting Started
+A responsive Next.js (App Router) + TypeScript + Tailwind CSS landing page
+recreating the "Jammy Jam" reference design, with a live countdown and an
+accessible, animated mobile navigation menu.
 
-First, run the development server:
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # production build
+npm run lint    # eslint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Change the countdown date (one place)
 
-## Learn More
+Edit `config/site.ts`:
 
-To learn more about Next.js, take a look at the following resources:
+```ts
+export const EVENT_DATE_ISO = "2026-09-15T09:00:00+01:00";
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Use an ISO 8601 string with a timezone offset so every visitor sees the same
+target moment regardless of their local timezone. Nav links and the CTA copy
+also live in this file.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Replacing placeholder assets
 
-## Deploy on Vercel
+This build includes generated placeholder art so the page renders correctly
+out of the box. Swap in the real assets at these exact paths and everything
+picks them up automatically — no code changes needed:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Path | Purpose |
+| --- | --- |
+| `public/images/logo.svg` | The "JAMMY JAM" lockup with cat ears |
+| `public/images/cloud.svg` | Cloud illustration, reused/positioned 4× via `components/CloudField.tsx` |
+| `public/fonts/sonic-the-hedgehog-1-hud.otf` | Pixel display font referenced in `app/globals.css` |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+If the font file is missing, `font-display: swap` and the fallback stack
+(`"Segoe UI Black", "Arial Black", sans-serif`) keep the page fully usable.
+
+## Structure
+
+```
+app/
+  layout.tsx        Root layout + metadata
+  page.tsx           Page composition (hero, countdown, anchor sections)
+  globals.css        Design tokens (@theme), font-face, pixel-styled utility classes
+components/
+  Navbar.tsx         Responsive nav: horizontal on desktop, animated
+                     hamburger + focus-trapped dialog on mobile/tablet
+  CloudField.tsx      Decorative background clouds (aria-hidden)
+  Countdown.tsx        Client component, ticks every second, aria-live region
+  HeroActions.tsx       Client wrapper for the Register/Schedule buttons
+  PillButton.tsx        Reusable pixel-styled <button>
+config/
+  site.ts             Countdown target date, nav links, CTA copy
+```
+
+## Accessibility notes
+
+- Mobile menu: `aria-expanded` on the toggle, `role="dialog"` +
+  `aria-modal="true"` on the panel, focus moves into the panel on open,
+  `Tab`/`Shift+Tab` are trapped inside it, `Escape` closes and returns focus
+  to the toggle button, and body scroll is locked while open.
+- Countdown uses `role="timer"` and `aria-live="polite"` so screen readers
+  get a sensible summary rather than a tick-by-tick readout.
+- Decorative images (clouds) are `aria-hidden`; the logo has descriptive
+  alt text.
+- Respects `prefers-reduced-motion` (menu/hamburger animation duration
+  drops to ~0 via Framer Motion's `useReducedMotion`, and a global CSS rule
+  covers everything else).
+
+## Responsive behavior
+
+- Fluid, `clamp()`-free scaling is done via Tailwind responsive utilities
+  (`text-xs sm:text-sm md:text-base`, `max-w-xs sm:max-w-sm md:max-w-lg`,
+  etc.) rather than fixed pixel widths, so the logo, countdown tiles, and
+  buttons scale smoothly from small phones up to desktop.
+- Nav collapses to a hamburger below the `md` breakpoint.
