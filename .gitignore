@@ -31,9 +31,8 @@ yarn-error.log*
 .pnpm-debug.log*
 .dev-*.log
 
-# env files (can opt-in for committing if needed)
+# env files — never commit any of them, .env.local is the only one we use
 .env*
-!.env.example
 
 # vercel
 .vercel
