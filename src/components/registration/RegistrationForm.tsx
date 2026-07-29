@@ -29,6 +29,7 @@ export type RegistrationValues = {
   level: string;
   skills: string;
   expectations: string;
+  attendance: "" | "both" | "13" | "14";
   staying: "no" | "yes";
   hasTeam: "no" | "yes";
   /* only filled in when hasTeam is "yes" */
@@ -59,6 +60,7 @@ const EMPTY: RegistrationValues = {
   level: "",
   skills: "",
   expectations: "",
+  attendance: "",
   staying: "no",
   hasTeam: "no",
   teamSize: "",
@@ -100,6 +102,12 @@ function clearSquadErrors(current: Partial<Record<FieldName, string>>) {
 }
 
 const LEVELS = ["High School", "L1", "L2", "L3", "M1", "M2"] as const;
+
+const ATTENDANCE = [
+  { value: "both", label: "Yes — both days" },
+  { value: "13", label: "Only 13 August" },
+  { value: "14", label: "Only 14 August" },
+] as const;
 
 /** Single-column text inputs, in the order they appear on the board. */
 const TEXT_FIELDS: {
@@ -171,6 +179,7 @@ function validate(values: RegistrationValues) {
   if (!values.university.trim()) errors.university = "Enter your university";
   if (!values.studentId.trim()) errors.studentId = "Enter your student ID";
   if (!values.level) errors.level = "Pick your study level";
+  if (!values.attendance) errors.attendance = "Tell us which days you can come";
 
   if (values.hasTeam === "yes") {
     if (!values.teamSize) errors.teamSize = "Pick your team size";
@@ -464,8 +473,36 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                   </Field>
 
                   <Field
+                    name="attendance"
+                    label="Can you attend both days (13 & 14 August)?"
+                    required
+                    error={errors.attendance}
+                  >
+                    <div className="jj-select">
+                      <select
+                        id="jj-attendance"
+                        name="attendance"
+                        value={values.attendance}
+                        onChange={update("attendance")}
+                        aria-invalid={Boolean(errors.attendance)}
+                        aria-describedby={
+                          errors.attendance ? "jj-attendance-error" : undefined
+                        }
+                        className="jj-input jj-cut jj-cut--sm"
+                      >
+                        <option value="">Pick your availability</option>
+                        {ATTENDANCE.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </Field>
+
+                  <Field
                     name="staying"
-                    label="Staying the night of 14 August?"
+                    label="Staying the night of 13 August?"
                   >
                     <div className="jj-select">
                       <select

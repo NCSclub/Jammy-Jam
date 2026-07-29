@@ -1013,6 +1013,18 @@ body {
   box-shadow: 6px 6px 0 color-mix(in srgb, var(--accent), white 28%);
 }
 
+/* Five tabs instead of three — let them wrap and tighten the padding a little
+   so they still fit beside the search box */
+.admin-dashboard .filter-tabs {
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.admin-dashboard .filter-tabs button {
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
 /* Type bumped a step across the dashboard. Spacing is left alone — these are
    the small labels that were hardest to read, not the headings. */
 .admin-dashboard .section-kicker { font-size: 13px; }

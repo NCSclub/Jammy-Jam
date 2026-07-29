@@ -35,7 +35,7 @@ export async function logout() {
 }
 
 const COLUMNS =
-  "id, first_name, last_name, email, university, level, team_name, staying, checked_in";
+  "id, first_name, last_name, email, university, level, team_name, team_size, team_members, staying, checked_in";
 
 export async function listParticipants(): Promise<Participant[]> {
   const { data, error } = await supabaseAdmin()
@@ -52,6 +52,11 @@ export async function listParticipants(): Promise<Participant[]> {
     university: row.university,
     level: row.level,
     team: row.team_name,
+    /* walk-ins added from the dashboard have no team_size, so fall back to
+       counting the listed members plus the registrant themselves */
+    teamSize:
+      row.team_size ??
+      (row.team_members?.length ? row.team_members.length + 1 : null),
     staying: row.staying,
     checkedIn: row.checked_in,
   }));

@@ -12,6 +12,7 @@ export async function submitRegistration(values: RegistrationValues) {
     values.university,
     values.studentId,
     values.level,
+    values.attendance,
   ];
   if (required.some((value) => !value?.trim())) {
     throw new Error("Some required fields are missing");
@@ -33,6 +34,7 @@ export async function submitRegistration(values: RegistrationValues) {
     level: values.level,
     skills: values.skills.trim() || null,
     expectations: values.expectations.trim() || null,
+    attendance: values.attendance,
     staying: values.staying === "yes",
     has_team: hasTeam,
     team_size: hasTeam && values.teamSize ? Number(values.teamSize) : null,

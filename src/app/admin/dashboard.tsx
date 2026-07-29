@@ -11,7 +11,15 @@ import {
 } from "./actions";
 import type { Participant } from "./types";
 
-type Filter = "all" | "teams" | "solo";
+type Filter = "all" | "solo" | "2" | "3" | "4";
+
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "all", label: "all" },
+  { value: "solo", label: "solo" },
+  { value: "2", label: "team of 2" },
+  { value: "3", label: "team of 3" },
+  { value: "4", label: "team of 4" },
+];
 
 export function Dashboard({ participants }: { participants: Participant[] }) {
   const router = useRouter();
@@ -30,8 +38,8 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
     return participants.filter((participant) => {
       const matchesFilter =
         filter === "all" ||
-        (filter === "teams" && participant.team) ||
-        (filter === "solo" && !participant.team);
+        (filter === "solo" && !participant.team) ||
+        (filter !== "solo" && participant.teamSize === Number(filter));
       const matchesSearch =
         !needle ||
         [participant.name, participant.email, participant.team, participant.university]
@@ -147,13 +155,13 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
             />
           </label>
           <div className="filter-tabs" aria-label="Participant type">
-            {(["all", "teams", "solo"] as const).map((item) => (
+            {FILTERS.map((item) => (
               <button
-                key={item}
-                className={filter === item ? "active" : ""}
-                onClick={() => setFilter(item)}
+                key={item.value}
+                className={filter === item.value ? "active" : ""}
+                onClick={() => setFilter(item.value)}
               >
-                {item}
+                {item.label}
               </button>
             ))}
           </div>

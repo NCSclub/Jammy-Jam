@@ -5,6 +5,7 @@ export type Participant = {
   university: string;
   level: string;
   team: string | null;
+  teamSize: number | null;
   staying: boolean;
   checkedIn: boolean;
 };
