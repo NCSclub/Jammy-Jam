@@ -35,11 +35,20 @@ export function Sponsors() {
             >
                 Proudly sponsored by our host institution:
             </p>
+            <div className="my-4 flex items-center relative overflow-hidden">
                 <img
                     src="/Sections/Sponsors/Gems/Yellow-Gem.png"
                     alt="Yellow Gem"
-                    className="my-4 mx-auto block h-auto w-auto"
+                    className=" mx-auto h-auto w-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                 />
+
+                <img
+                    src="/Sections/Sponsors/yellow-sonic.png"
+                    alt="Yellow sonic"
+                    className="h-auto w-auto ml-10 "
+                />
+
+            </div>
 
                 <div className="flex justify-between items-center my-6 px-[16%]">
                     <img
