@@ -29,16 +29,20 @@ export type RegistrationValues = {
   skills: string;
   expectations: string;
   hasTeam: "no" | "yes";
+  /* only filled in when hasTeam is "yes" */
+  teamName: string;
+  teammate1: string;
+  teammate2: string;
+  teammate3: string;
 };
 
 type FieldName = keyof RegistrationValues;
 
 type Props = {
-  /** Renders the X button and the CLOSE action when provided. */
+  /** Fired by the top-right X and the CLOSE button — this opens over the site. */
   onClose?: () => void;
   /** Receives the values once validation passes. */
   onSubmit?: (values: RegistrationValues) => void | Promise<void>;
-  eventDate?: string;
 };
 
 const EMPTY: RegistrationValues = {
@@ -52,7 +56,22 @@ const EMPTY: RegistrationValues = {
   skills: "",
   expectations: "",
   hasTeam: "no",
+  teamName: "",
+  teammate1: "",
+  teammate2: "",
+  teammate3: "",
 };
+
+/** Shown only once the squad question is answered "yes". */
+const TEAMMATE_FIELDS: {
+  name: Extract<FieldName, "teammate1" | "teammate2" | "teammate3">;
+  label: string;
+  required?: boolean;
+}[] = [
+  { name: "teammate1", label: "Member 1", required: true },
+  { name: "teammate2", label: "Member 2" },
+  { name: "teammate3", label: "Member 3" },
+];
 
 /** Single-column text inputs, in the order they appear on the board. */
 const TEXT_FIELDS: {
@@ -123,14 +142,17 @@ function validate(values: RegistrationValues) {
   if (!values.university.trim()) errors.university = "Enter your university";
   if (!values.studentId.trim()) errors.studentId = "Enter your student ID";
 
+  if (values.hasTeam === "yes") {
+    if (!values.teamName.trim()) errors.teamName = "Name your squad";
+    const roster = [values.teammate1, values.teammate2, values.teammate3];
+    if (roster.every((member) => !member.trim()))
+      errors.teammate1 = "Add at least one member";
+  }
+
   return errors;
 }
 
-export default function RegistrationForm({
-  onClose,
-  onSubmit,
-  eventDate = "17 / 18 April 2026",
-}: Props) {
+export default function RegistrationForm({ onClose, onSubmit }: Props) {
   const [values, setValues] = useState<RegistrationValues>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
@@ -151,6 +173,24 @@ export default function RegistrationForm({
         return next;
       });
     };
+
+  /* switching back to "no" wipes the roster so stale names never get submitted */
+  function handleTeamChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const hasTeam = event.target.value === "yes" ? "yes" : "no";
+    setValues((current) => ({
+      ...current,
+      hasTeam,
+      ...(hasTeam === "no"
+        ? { teamName: "", teammate1: "", teammate2: "", teammate3: "" }
+        : null),
+    }));
+    setErrors((current) => {
+      const next = { ...current };
+      delete next.teamName;
+      delete next.teammate1;
+      return next;
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -181,31 +221,31 @@ export default function RegistrationForm({
       <div className="jj-frame jj-cut p-1">
         <div className="jj-frame__bevel jj-cut p-1">
           <div className="jj-frame__body jj-cut">
-            <header className="jj-header px-6 pt-6 pb-5 sm:px-8">
+            <header className="jj-header px-6 py-7 sm:px-8">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="jj-title text-base sm:text-xl">
                   Jammy Jam
                   <br />
-                  Registration
+                  <em>Registration</em>
                 </h2>
-                {onClose ? (
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="jj-close jj-cut jj-cut--sm shrink-0"
-                    aria-label="Close registration form"
-                  >
-                    X
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="jj-close jj-cut jj-cut--sm shrink-0"
+                  aria-label="Close registration form"
+                >
+                  X
+                </button>
               </div>
-              <p className="jj-subtitle mt-4 flex items-center gap-3 text-[9px] sm:text-[10px]">
-                <span className="jj-cal" aria-hidden="true" />
-                {eventDate}
-              </p>
             </header>
 
-            <div className="jj-checker" aria-hidden="true" />
+            <div className="jj-track" aria-hidden="true">
+              <div className="jj-checker" />
+              <div className="jj-runner">
+                <span className="jj-runner__bubble">Hey!</span>
+                <span className="jj-runner__sprite" />
+              </div>
+            </div>
 
             {status === "done" ? (
               <div className="px-6 py-14 text-center sm:px-8">
@@ -218,15 +258,13 @@ export default function RegistrationForm({
                     Check your inbox — we&apos;ll send the Discord invite and
                     the jam briefing before day one.
                   </p>
-                  {onClose ? (
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="jj-btn jj-cut jj-cut--sm mt-2"
-                    >
-                      Back
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="jj-btn jj-cut jj-cut--sm mt-2"
+                  >
+                    Back
+                  </button>
                 </div>
               </div>
             ) : (
@@ -330,7 +368,7 @@ export default function RegistrationForm({
                         id="jj-hasTeam"
                         name="hasTeam"
                         value={values.hasTeam}
-                        onChange={update("hasTeam")}
+                        onChange={handleTeamChange}
                         className="jj-input jj-cut jj-cut--sm"
                       >
                         <option value="no">No — find me one</option>
@@ -338,22 +376,74 @@ export default function RegistrationForm({
                       </select>
                     </div>
                   </Field>
+
+                  {values.hasTeam === "yes" ? (
+                    <div className="jj-squad jj-cut jj-cut--sm p-5">
+                      <p className="jj-squad__title">Squad roster</p>
+                      <div className="mt-5 grid gap-5">
+                        <Field
+                          name="teamName"
+                          label="Team Name"
+                          required
+                          error={errors.teamName}
+                        >
+                          <input
+                            id="jj-teamName"
+                            name="teamName"
+                            type="text"
+                            placeholder="Enter your team name"
+                            value={values.teamName}
+                            onChange={update("teamName")}
+                            aria-invalid={Boolean(errors.teamName)}
+                            aria-describedby={
+                              errors.teamName ? "jj-teamName-error" : undefined
+                            }
+                            className="jj-input jj-cut jj-cut--sm"
+                          />
+                        </Field>
+
+                        <div className="grid gap-5">
+                          {TEAMMATE_FIELDS.map((field) => (
+                            <Field
+                              key={field.name}
+                              name={field.name}
+                              label={field.label}
+                              required={field.required}
+                              error={errors[field.name]}
+                            >
+                              <input
+                                id={`jj-${field.name}`}
+                                name={field.name}
+                                type="text"
+                                placeholder="Full name"
+                                value={values[field.name]}
+                                onChange={update(field.name)}
+                                aria-invalid={Boolean(errors[field.name])}
+                                aria-describedby={
+                                  errors[field.name]
+                                    ? `jj-${field.name}-error`
+                                    : undefined
+                                }
+                                className="jj-input jj-cut jj-cut--sm"
+                              />
+                            </Field>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="jj-checker mt-8 -mx-6 sm:-mx-8" aria-hidden="true" />
 
                 <div className="mt-7 flex flex-col-reverse gap-4 sm:flex-row sm:justify-between">
-                  {onClose ? (
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="jj-btn jj-btn--ghost jj-cut jj-cut--sm"
-                    >
-                      Close
-                    </button>
-                  ) : (
-                    <span />
-                  )}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="jj-btn jj-btn--ghost jj-cut jj-cut--sm"
+                  >
+                    Close
+                  </button>
                   <button
                     type="submit"
                     disabled={status === "sending"}
