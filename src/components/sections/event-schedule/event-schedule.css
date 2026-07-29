@@ -1,0 +1,365 @@
+/* ==========================================================================
+   EVENT SCHEDULE — the lava cave section
+   Proportions follow the prototype: full-width stalactite ceiling, gold title,
+   three tabs spread across the width with a pixel cursor marking the active
+   one, Amy at the right of the tab row, the board at ~70% width and the lava
+   platform centred beneath it.
+   ========================================================================== */
+
+.es {
+  --es-gold: #ffcf00;
+  --es-gold-deep: #a34d00;
+  --es-tab: #3fa9f5;        /* sampled from the swatch */
+  --es-tab-dark: #1a6ba8;   /* its shadow */
+  --es-tab-lit: #6ac4ff;    /* selected state */
+  --es-ink: #1a0a04;
+
+  position: relative;
+  overflow: hidden;
+  padding: 150px 24px 120px;
+  /* dark under the ceiling, molten through the middle, dark again at the floor */
+  background: linear-gradient(
+    180deg,
+    #0d0301 0%,
+    #2c0802 12%,
+    #6b1604 30%,
+    #b53b06 48%,
+    #e8791e 60%,
+    #a82a05 74%,
+    #3d0c02 90%,
+    #160401 100%
+  );
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   Ceiling. The three rocks have finished ends so they cannot tile — five
+   copies are overlapped instead, which covers the full width with no gaps.
+   -------------------------------------------------------------------------- */
+.es__ceiling {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 150px;
+  pointer-events: none;
+}
+
+/* The rock tops taper at their ends, so a band runs behind them at the very
+   top to fill the notches where two pieces meet. Its colours are sampled from
+   the rock itself (dark outline, then the lit face) so it reads as more rock
+   rather than as a gap between the checkered ground and the ceiling. */
+.es__ceiling::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 26px;
+  background: linear-gradient(
+    180deg,
+    #1a0303 0 3px,
+    #5d160a 3px 11px,
+    #9a320f 11px 20px,
+    #7e280e 20px
+  );
+}
+
+.es__ceiling img {
+  position: absolute;
+  /* every piece is flush with the top: the transparent padding above the rock
+     has been cropped out of the PNGs themselves */
+  top: 0;
+  width: 27%;
+  height: auto;
+}
+
+.es__ceiling img:nth-child(1) { left: -4%; }
+.es__ceiling img:nth-child(2) { left: 17%; }
+.es__ceiling img:nth-child(3) { left: 38%; }
+.es__ceiling img:nth-child(4) { left: 59%; }
+.es__ceiling img:nth-child(5) { left: 78%; width: 26%; }
+
+/* --------------------------------------------------------------------------
+   Title
+   -------------------------------------------------------------------------- */
+/* one shared width for tabs, board, platform and Amy — proportions below are
+   percentages of this, taken straight off the prototype */
+.es__inner {
+  position: relative;
+  width: min(1320px, 100%);
+  margin: 0 auto;
+}
+
+.es__title {
+  position: relative;
+  /* pushed clear of the stalactites hanging above it */
+  margin: 54px 0 38px;
+  color: var(--es-gold);
+  font-size: clamp(22px, 3.6vw, 44px);
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 4px 0 var(--es-gold-deep), 0 8px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   Tabs — spread across the width like the prototype, not bunched together
+   -------------------------------------------------------------------------- */
+.es__tabs {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 110px;
+  /* generous gap so the board is not crowded up against the tab row */
+  margin: 0 0 96px;
+}
+
+.es__tab-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+/* first tab hugs the left edge, last hugs the right, middle stays centred —
+   that is the spread in the prototype */
+.es__tab-slot:first-child { justify-content: flex-start; }
+.es__tab-slot:last-child { justify-content: flex-end; }
+
+.es__tab {
+  width: 100%;
+  max-width: 260px;
+  padding: 18px 22px;
+  border: 0;
+  border-radius: 0;
+  color: #04243c;
+  background: var(--es-tab);
+  /* sprite bevel: lit along the top, shaded along the bottom */
+  box-shadow:
+    inset 0 4px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -5px 0 rgba(4, 60, 100, 0.35);
+  font: inherit;
+  font-size: clamp(12px, 1.5vw, 19px);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* stepped corners instead of a smooth pill — reads as pixel art */
+  clip-path: polygon(
+    0 8px, 4px 8px, 4px 4px, 8px 4px, 8px 0,
+    calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px,
+    calc(100% - 4px) 8px, 100% 8px,
+    100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px),
+    calc(100% - 8px) 100%,
+    8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px),
+    4px calc(100% - 8px), 0 calc(100% - 8px)
+  );
+  /* drop-shadow, not box-shadow: clip-path would cut a box-shadow off */
+  filter: drop-shadow(0 6px 0 var(--es-tab-dark));
+  transition: transform 0.08s steps(2, end), filter 0.08s steps(2, end);
+}
+
+.es__tab:hover {
+  filter: drop-shadow(0 6px 0 var(--es-tab-dark)) brightness(1.12);
+}
+
+.es__tab:active {
+  transform: translateY(5px);
+  filter: drop-shadow(0 1px 0 var(--es-tab-dark));
+}
+
+.es__tab[aria-selected="true"] {
+  background: var(--es-tab-lit);
+  box-shadow:
+    inset 0 0 0 4px #ffffff,
+    inset 0 6px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -5px 0 rgba(4, 60, 100, 0.3);
+}
+
+/* pixel cursor: one 5px block cloned by box-shadow into a stepped arrow */
+.es__cursor {
+  position: absolute;
+  left: -34px;
+  width: 5px;
+  height: 5px;
+  background: #ffffff;
+  box-shadow:
+    0 5px 0 #fff, 0 10px 0 #fff, 0 15px 0 #fff, 0 20px 0 #fff,
+    5px 5px 0 #fff, 5px 10px 0 #fff, 5px 15px 0 #fff,
+    10px 10px 0 #fff;
+  transform: translateY(-12px);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   The board. border-image keeps the pixel frame crisp — the slice values are
+   measured off board.png (49px top/bottom, 37px sides).
+   -------------------------------------------------------------------------- */
+.es__board {
+  position: relative;
+  /* +170px wide, +200px tall on the previous size */
+  width: min(100%, calc(78% + 170px));
+  min-width: min(100%, 320px);
+  min-height: 600px;
+  margin: 0 auto;
+  padding: 36px 42px;
+  border-style: solid;
+  border-width: 26px 24px;
+  border-image: url("/sections/schedule/board.png") 49 37 fill stretch;
+}
+
+.es__list {
+  display: grid;
+  gap: 2px;
+  max-height: 540px;
+  overflow-y: auto;
+}
+
+.es__row {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  gap: 22px;
+  align-items: baseline;
+  padding: 15px 10px;
+  border-bottom: 2px dotted rgba(26, 10, 4, 0.25);
+}
+
+.es__row:last-child { border-bottom: 0; }
+
+.es__time {
+  color: #a34d00;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.es__what {
+  margin: 0;
+  color: var(--es-ink);
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.es__note {
+  display: block;
+  margin-top: 6px;
+  color: #6b4a1e;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Props
+   -------------------------------------------------------------------------- */
+.es__platform {
+  display: block;
+  width: 62%;
+  height: auto;
+  /* dropped well below the board so the two do not crowd each other */
+  margin: 110px auto 0;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* Amy hangs off the right end of the tab row, her right edge flush with the
+   last tab's — exactly where she sits in the prototype */
+.es__amy {
+  position: absolute;
+  top: 26px;
+  right: 0;
+  z-index: 2;
+  width: 8.5%;
+  min-width: 54px;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: es-hover 2.6s steps(2, end) infinite;
+}
+
+@keyframes es-hover {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* --------------------------------------------------------------------------
+   Pixel decorations — the ember clusters, lava orb and star sparkle
+   -------------------------------------------------------------------------- */
+.es__decor {
+  position: absolute;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* embers rising off the lava platform */
+.es__ember {
+  position: absolute;
+  background: #ff9a1f;
+  box-shadow: 0 0 9px 3px rgba(255, 100, 15, 0.55);
+  pointer-events: none;
+  animation-name: es-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes es-rise {
+  from { opacity: 0; transform: translate(0, 0) scale(1); }
+  12% { opacity: 1; }
+  60% { transform: translate(10px, -140px) scale(0.75); }
+  to { opacity: 0; transform: translate(-6px, -280px) scale(0.3); }
+}
+
+.es__decor--embers {
+  animation: es-twinkle 3.2s steps(2, end) infinite;
+}
+
+/* the orb glows and drifts; the delay keeps it out of sync with the embers */
+.es__decor--orb {
+  filter: drop-shadow(0 0 10px rgba(255, 90, 20, 0.55));
+  animation: es-float 4.4s ease-in-out infinite;
+}
+
+.es__decor--star {
+  animation: es-twinkle 2.4s steps(2, end) infinite 1.1s;
+}
+
+@keyframes es-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes es-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@media (max-width: 720px) {
+  .es { padding: 104px 14px 80px; }
+  .es__ceiling { height: 96px; }
+  .es__tabs { flex-wrap: wrap; justify-content: center; gap: 14px; margin-bottom: 52px; }
+  .es__tab { padding: 13px 16px; font-size: 12px; }
+  .es__platform { margin-top: 60px; }
+  .es__tab-slot { flex: 0 0 auto; }
+  .es__cursor { display: none; }
+  .es__amy { top: -10px; right: 2%; width: 52px; }
+  .es__board { width: 100%; padding: 18px 16px; border-width: 20px 18px; min-height: 300px; }
+  .es__time { font-size: 15px; }
+  .es__what { font-size: 17px; }
+  .es__note { font-size: 14px; }
+  .es__platform { width: 86%; }
+  .es__row { grid-template-columns: 58px 1fr; gap: 10px; }
+  .es__platform { width: 78%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .es__amy,
+  .es__decor,
+  .es__ember {
+    animation: none;
+  }
+}
