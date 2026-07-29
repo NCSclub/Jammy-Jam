@@ -26,8 +26,10 @@ export type RegistrationValues = {
   discord: string;
   university: string;
   studentId: string;
+  level: string;
   skills: string;
   expectations: string;
+  staying: "no" | "yes";
   hasTeam: "no" | "yes";
   /* only filled in when hasTeam is "yes" */
   teamSize: "" | "2" | "3" | "4";
@@ -54,8 +56,10 @@ const EMPTY: RegistrationValues = {
   discord: "",
   university: "",
   studentId: "",
+  level: "",
   skills: "",
   expectations: "",
+  staying: "no",
   hasTeam: "no",
   teamSize: "",
   teamName: "",
@@ -94,6 +98,8 @@ function clearSquadErrors(current: Partial<Record<FieldName, string>>) {
   delete next.teammate3;
   return next;
 }
+
+const LEVELS = ["High School", "L1", "L2", "L3", "M1", "M2"] as const;
 
 /** Single-column text inputs, in the order they appear on the board. */
 const TEXT_FIELDS: {
@@ -144,13 +150,14 @@ const TEXT_FIELDS: {
     type: "text",
     required: true,
   },
-  {
-    name: "skills",
-    label: "Skills",
-    placeholder: "E.g. Web dev, pixel art, sound design...",
-    type: "text",
-  },
 ];
+
+/* Rendered after the study level so the academic fields stay together. */
+const SKILLS_FIELD = {
+  name: "skills",
+  label: "Skills",
+  placeholder: "E.g. Web dev, pixel art, sound design...",
+} as const;
 
 function validate(values: RegistrationValues) {
   const errors: Partial<Record<FieldName, string>> = {};
@@ -163,6 +170,7 @@ function validate(values: RegistrationValues) {
   if (!values.phone.trim()) errors.phone = "Enter your phone number";
   if (!values.university.trim()) errors.university = "Enter your university";
   if (!values.studentId.trim()) errors.studentId = "Enter your student ID";
+  if (!values.level) errors.level = "Pick your study level";
 
   if (values.hasTeam === "yes") {
     if (!values.teamSize) errors.teamSize = "Pick your team size";
@@ -256,9 +264,12 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
     try {
       await onSubmit?.(values);
       setStatus("done");
-    } catch {
+    } catch (error) {
       setStatus("idle");
-      setErrors({ email: "Sending failed, try again" });
+      setErrors({
+        email:
+          error instanceof Error ? error.message : "Sending failed, try again",
+      });
     }
   }
 
@@ -398,6 +409,46 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                   ))}
 
                   <Field
+                    name="level"
+                    label="Study Level"
+                    required
+                    error={errors.level}
+                  >
+                    <div className="jj-select">
+                      <select
+                        id="jj-level"
+                        name="level"
+                        value={values.level}
+                        onChange={update("level")}
+                        aria-invalid={Boolean(errors.level)}
+                        aria-describedby={
+                          errors.level ? "jj-level-error" : undefined
+                        }
+                        className="jj-input jj-cut jj-cut--sm"
+                      >
+                        <option value="">Pick your level</option>
+                        {LEVELS.map((level) => (
+                          <option key={level} value={level}>
+                            {level}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </Field>
+
+                  <Field name="skills" label={SKILLS_FIELD.label}>
+                    <input
+                      id="jj-skills"
+                      name="skills"
+                      type="text"
+                      placeholder={SKILLS_FIELD.placeholder}
+                      value={values.skills}
+                      onChange={update("skills")}
+                      className="jj-input jj-cut jj-cut--sm"
+                    />
+                  </Field>
+
+                  <Field
                     name="expectations"
                     label="What are you expecting from this event?"
                   >
@@ -410,6 +461,24 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                       onChange={update("expectations")}
                       className="jj-input jj-cut jj-cut--sm"
                     />
+                  </Field>
+
+                  <Field
+                    name="staying"
+                    label="Staying the night of 14 August?"
+                  >
+                    <div className="jj-select">
+                      <select
+                        id="jj-staying"
+                        name="staying"
+                        value={values.staying}
+                        onChange={update("staying")}
+                        className="jj-input jj-cut jj-cut--sm"
+                      >
+                        <option value="no">No — going home that night</option>
+                        <option value="yes">Yes — sleeping at the venue</option>
+                      </select>
+                    </div>
                   </Field>
 
                   <Field name="hasTeam" label="Do you have a team?">
