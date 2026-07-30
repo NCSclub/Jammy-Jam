@@ -16,9 +16,9 @@
 
 @theme {
   /* Sky */
-  --color-sky-top: #2f8fe0;
-  --color-sky-mid: #6cb8ef;
-  --color-sky-bottom: #d7edfb;
+  --color-sky-top: #2d54f0;
+  --color-sky-mid: #6db7f5;
+  --color-sky-bottom: #c8e6fe;
 
   /* Brand */
   --color-navy: #123163;
@@ -63,6 +63,20 @@ body {
   letter-spacing: 0.04em;
 }
 
+.text-pixel-outline-nav {
+  font-family: var(--font-display);
+  color: #FCBF09;
+  filter: drop-shadow(0px 2px 0px #E98F14);
+  letter-spacing: 0.04em;
+}
+
+.text-pixel-outline-nav-desk {
+  font-family: var(--font-display);
+  color: #95D1FC;
+  filter: drop-shadow(0px 2px 0px #110B72);
+  letter-spacing: 0.04em;
+}
+
 .text-pixel-outline-thin {
   font-family: var(--font-display);
   color: white;
@@ -78,7 +92,6 @@ body {
   font-family: var(--font-display);
   color: white;
   letter-spacing: 0.03em;
-  
 }
 
 /* Chunky pixel-game button shape: capsule with a hard drop shadow and inset highlight */

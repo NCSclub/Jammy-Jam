@@ -62,11 +62,11 @@ export default function Navbar() {
     <header className="absolute inset-x-0 top-0 z-30 px-4 pt-4 sm:px-6 md:px-8 md:pt-6">
       <nav
         aria-label="Primary"
-        className="mx-auto flex max-w-6xl items-center justify-between rounded-full border-2 border-white/70 bg-navy/40 px-5 py-3.5 backdrop-blur-sm sm:px-8 sm:py-4"
+        className="mx-auto flex max-w-6xl items-center justify-between rounded-full bg-[#003cb4] px-5 py-3.5 border-b-3 border-[#FCBF09] backdrop-blur-sm sm:px-8 sm:py-4"
       >
         <a
           href="#home"
-          className="text-pixel-outline-thin text-base font-bold sm:text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          className="text-pixel-outline-nav text-base uppercase font-bold sm:text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold "
         >
           {siteConfig.name}
         </a>
@@ -77,7 +77,7 @@ export default function Navbar() {
             <li key={link.href}>
               <a
                 href={link.href}
-                className="text-pixel-outline-thin text-base font-semibold uppercase tracking-wide transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold lg:text-lg"
+                className="text-pixel-outline-nav-desk text-base font-semibold uppercase tracking-wide transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold lg:text-lg"
               >
                 {link.label}
               </a>
