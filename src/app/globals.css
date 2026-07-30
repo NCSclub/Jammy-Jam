@@ -1,5 +1,162 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Hero: pixel display font, design tokens and the pixel text/button utilities
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------- */
+/* Pixel display font                                                     */
+/* Drop the real file at public/fonts/sonic-the-hedgehog-1-hud.otf and    */
+/* everything below will pick it up automatically (font-display: swap     */
+/* keeps the page usable while/if the file is missing).                  */
+/* ---------------------------------------------------------------------- */
+@font-face {
+  font-family: "Pixel HUD";
+  src: url("/fonts/sonic-the-hedgehog-1-hud.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  /* Sky */
+  --color-sky-top: #2d54f0;
+  --color-sky-mid: #6db7f5;
+  --color-sky-bottom: #c8e6fe;
+
+  /* Brand */
+  --color-navy: #123163;
+  --color-navy-dark: #0c2249;
+  --color-blue: #1f66c8;
+  --color-blue-light: #3fa9f5; 
+  --color-gold: #ffd23f;
+  --color-gold-dark: #e0a417;
+  --color-cream: #ede2c5;
+  --color-orange: #ff7a3d;
+  --color-cloud: #ffffff;
+  --color-cloud-shadow: #b9cfe0;
+  --color-button-highlight: #c6e0f3;
+
+  --font-display: "Pixel HUD", "Segoe UI Black", "Arial Black", sans-serif;
+  --font-body: "Segoe UI", "Arial", sans-serif;
+
+  --shadow-pixel-sm: 2px 2px 0 rgba(12, 34, 73, 0.9);
+  --shadow-pixel-md: 3px 4px 0 rgba(12, 34, 73, 0.95);
+  --shadow-pixel-lg: 5px 6px 0 rgba(12, 34, 73, 0.95);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Pixel-styled outlined text, used for the tagline / cta hint / countdown labels */
+.text-pixel-outline {
+  font-family: var(--font-display);
+  color: white;
+  text-shadow:
+    -2px -2px 0 var(--color-navy),
+    2px -2px 0 var(--color-navy),
+    -2px 2px 0 var(--color-navy),
+    2px 2px 0 var(--color-navy),
+    0 3px 0 rgba(12, 34, 73, 0.6);
+  letter-spacing: 0.04em;
+}
+
+.text-pixel-outline-nav {
+  font-family: var(--font-display);
+  color: #FCBF09;
+  filter: drop-shadow(0px 2px 0px #E98F14);
+  letter-spacing: 0.04em;
+}
+
+.text-pixel-outline-nav-desk {
+  font-family: var(--font-display);
+  color: #95D1FC;
+  filter: drop-shadow(0px 2px 0px #110B72);
+  letter-spacing: 0.04em;
+}
+
+.text-pixel-outline-thin {
+  font-family: var(--font-display);
+  color: white;
+  text-shadow:
+    -1px -1px 0 var(--color-navy),
+    1px -1px 0 var(--color-navy),
+    -1px 1px 0 var(--color-navy),
+    1px 1px 0 var(--color-navy);
+  letter-spacing: 0.03em;
+}
+
+.text-pixel-outline-thin-no-outline {
+  font-family: var(--font-display);
+  color: white;
+  letter-spacing: 0.03em;
+}
+
+/* Chunky pixel-game button shape: capsule with a hard drop shadow and inset highlight */
+.btn-pixel {
+  font-family: var(--font-display);
+  background: var(--color-blue-light);
+  border-color: #000;
+  color: #000;
+  box-shadow:
+    inset 0 3px 0 var(--color-button-highlight),
+    inset 0 -3px 0 #111111;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease;
+}
+
+.btn-pixel:hover {
+  filter: brightness(1.05);
+}
+
+.btn-pixel:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 0 var(--color-button-highlight),
+    inset 0 -2px 0 #111111;
+}
+
+/* Countdown digit tile */
+.countdown-tile {
+  font-family: var(--font-display);
+  background: linear-gradient(180deg, #ffffff 0%, #dfeaf5 100%);
+  box-shadow: var(--shadow-pixel-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Countdown digits: white fill, hard black pixel outline, no background tile */
+.text-pixel-countdown {
+  font-family: var(--font-display);
+  color: white;
+  text-shadow:
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000,
+    -2px 0 0 #000,
+    2px 0 0 #000,
+    0 -2px 0 #000,
+    0 2px 0 #000;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   Site sections, registration and the admin dashboard
+   ========================================================================== */
+
 :root {
   /* Matches the dark checker square, so any area the section does not cover
      (very wide, very short viewports) blends with it instead of flashing white. */

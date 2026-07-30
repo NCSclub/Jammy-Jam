@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 /**
- * The pixel font the Figma file uses for every string in the digits section.
+ * The pixel font the Figma file uses for every string on the site.
  * Self-hosted because it is not on any web font CDN; `next/font/local`
  * inlines the @font-face and preloads it, so there is no swap flash.
  */
@@ -18,7 +18,8 @@ const sonicHud = localFont({
 
 export const metadata: Metadata = {
   title: "Jammy Jam",
-  description: "Jammy Jam by the digits — participants, mentors and days.",
+  description:
+    "Welcome to your favorite game. Register now for Jammy Jam and save your spot.",
 };
 
 export default function RootLayout({
