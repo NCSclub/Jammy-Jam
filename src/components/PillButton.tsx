@@ -23,7 +23,7 @@ export default function PillButton({
   return (
     <button
       {...props}
-      className={`btn-pixel flex w-full items-center justify-center rounded-lg border-2 px-6 py-3 text-center text-base font-bold uppercase leading-none tracking-wide sm:rounded-xl sm:text-lg md:text-xl focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold ${variantClasses} ${className}`}
+      className={`btn-pixel flex w-full items-center justify-center rounded-lg border-2 px-7 py-3 text-center text-base font-bold uppercase leading-none tracking-wide sm:rounded-xl sm:text-lg md:text-xl focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold ${variantClasses} ${className}`}
     >
       {children}
     </button>

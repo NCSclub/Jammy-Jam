@@ -81,7 +81,7 @@ export default function Countdown() {
         <div key={unit.key} className="flex items-center gap-1.5 sm:gap-2.5 md:gap-4">
           <div className="flex flex-col items-center">
             <span
-              className="text-pixel-countdown flex items-center justify-center text-3xl sm:text-4xl md:text-7xl"
+              className="text-pixel-countdown flex items-center justify-center text-4xl sm:text-4xl md:text-7xl"
               aria-hidden="true"
             >
               {pad(display[unit.key])}

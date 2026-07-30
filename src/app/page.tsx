@@ -28,7 +28,7 @@ export default function Home() {
           >
             <h1
               id="hero-heading"
-              className="relative mx-auto w-full max-w-xs sm:max-w-sm md:max-w-lg lg:max-w-xl"
+              className="relative mx-auto w-full max-w-[28rem] sm:max-w-sm md:max-w-lg lg:max-w-xl"
             >
               <Image
                 src="/Logo.svg"
@@ -40,7 +40,7 @@ export default function Home() {
               />
             </h1>
 
-            <p className="text-pixel-outline-thin-no-outline mt-3 max-w-md text-xs uppercase sm:mt-4 sm:text-sm md:text-base drop-shadow-[0_2px_0px_#E98F14]">
+            <p className="text-pixel-outline-thin-no-outline mt-3 max-w-[28rem] text-[0.875rem] uppercase sm:mt-4 sm:text-sm md:text-base drop-shadow-[0_2px_0px_#E98F14]">
               {siteConfig.ctaHint.prefix}
               <span className="text-[#FCBF09]">
                 {siteConfig.ctaHint.highlight}
@@ -52,7 +52,7 @@ export default function Home() {
               <HeroActions />
             </div>
 
-            <div className="mt-8 w-full max-w-md sm:mt-10 md:mt-12">
+            <div className="mt-8 w-full max-w-[28rem] sm:mt-10 md:mt-12">
               <Countdown />
             </div>
           </div>
