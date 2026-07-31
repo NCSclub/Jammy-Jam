@@ -27,8 +27,9 @@ export function Footer() {
       <div className="pointer-events-none absolute inset-x-2 top-0 z-20 mx-auto flex max-w-6xl -translate-y-8/9 justify-start px-4 sm:px-6 lg:px-8">
         <img
           src="/sections/Footer/Footerscreen.svg"
-          alt="Footer screen"
-          className="h-auto w-40 sm:w-52"
+          alt=""
+          aria-hidden="true"
+          className="h-auto w-[clamp(88px,19vw,150px)]"
         />
       </div>
 

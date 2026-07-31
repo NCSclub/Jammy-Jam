@@ -353,7 +353,7 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
                 ⚑ New team
               </button>
             ) : null}
-            <button className="csv-button" onClick={exportCsv}>↓ Export CSV</button>
+            <button className="csv-button csv-button--export" onClick={exportCsv}>↓ Export CSV</button>
           </div>
         </div>
 

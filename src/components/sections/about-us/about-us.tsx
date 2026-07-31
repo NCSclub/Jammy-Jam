@@ -113,7 +113,11 @@ export function AboutUs() {
         src={`${ART}/tails.png`}
         alt=""
         aria-hidden="true"
-        style={{ left: "37%", top: "-1%", width: "7.5%" }}
+        /* Fully inside the section. He used to sit at top:-1% to poke up into
+           the hero, but .au clips its overflow (that is what crops the soil off
+           the ground strip), so all that did was saw ~20% off his head against
+           the section edge. 8px keeps him level with the seam and whole. */
+        style={{ left: "37%", top: "8px", width: "7.5%" }}
       />
 
       {/* Eggman hangs off the right edge, level with the board */}

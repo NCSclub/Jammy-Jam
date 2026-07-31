@@ -179,6 +179,99 @@ html {
   }
 }
 
+/* ==========================================================================
+   RESPONSIVE — nothing may scroll the page sideways
+   ========================================================================== */
+
+/* A single overflowing element (a nowrap headline, a bleeding sprite) drags the
+   whole document sideways on a phone and every section looks broken at once.
+   This is the backstop; the rules below fix the causes. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   JAMMY JAM BY DIGITS
+
+   The canvas is a 1440px design reproduced with cqw units, so it scales
+   perfectly and illegibly: at 375px wide the card copy renders at ~9px. Below
+   860px the canvas and its bleed sprites step aside for a stacked list that
+   carries the same numbers at a readable size, on the same checkered ground.
+   -------------------------------------------------------------------------- */
+.jjd__stack { display: none; }
+
+@media (max-width: 860px) {
+  .jjd__canvas,
+  .jjd__bleed { display: none; }
+
+  .jjd {
+    /* the canvas used to give this box its height; the list does now */
+    padding: 56px 18px 64px;
+  }
+
+  .jjd__stack {
+    position: relative;
+    display: grid;
+    gap: 16px;
+    margin: 0 auto;
+    padding: 0;
+    max-width: 460px;
+    list-style: none;
+  }
+
+  .jjd__stack-head h2 {
+    margin: 0 0 4px;
+    font-family: var(--font-sonic-hud), Arial, sans-serif;
+    font-size: clamp(24px, 7vw, 40px);
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow: 0 3px 0 #000;
+  }
+
+  .jjd__card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+    border: 3px solid;
+    border-radius: 14px;
+    background: #010101;
+    font-family: var(--font-sonic-hud), Arial, sans-serif;
+  }
+
+  .jjd__card img {
+    width: 42px;
+    height: auto;
+    flex: 0 0 42px;
+  }
+
+  .jjd__card h3 {
+    margin: 0;
+    font-size: 15px;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+    text-shadow: 0 3px 0 #ca790a;
+  }
+
+  .jjd__card strong {
+    display: block;
+    margin: 2px 0 6px;
+    font-size: 30px;
+    line-height: 1.1;
+    text-shadow: 0 3px 0 #ca790a;
+  }
+
+  .jjd__card p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+}
+
 /* Countdown digits: white fill, hard black pixel outline, no background tile */
 .text-pixel-countdown {
   font-family: var(--font-display);
@@ -795,8 +888,10 @@ body {
   .stat-card { min-height: 120px; }
   .participant-panel { padding: 18px; }
   .panel-title { align-items: flex-start; }
-  .csv-button { font-size: 0; }
-  .csv-button::after { content: "↓ CSV"; font-size: 11px; }
+  /* scoped to the export button only — the Modify / New team / Clear filter
+     buttons share this class and must keep their own labels */
+  .csv-button--export { font-size: 0; }
+  .csv-button--export::after { content: "↓ CSV"; font-size: 11px; }
   .toolbar { align-items: stretch; flex-direction: column; }
   .search-box { min-width: 0; min-height: 40px; }
   .filter-tabs { justify-content: stretch; }

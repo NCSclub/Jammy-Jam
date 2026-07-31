@@ -1,105 +1,93 @@
 import { LavaDecor } from "./lava-decor/lava-decor";
 
+const GEMS = "/sections/Sponsors/Gems";
+
+/* Every asset is sized in vw with a floor and a ceiling so the composition
+   holds its proportions from 320px up, rather than sitting at the PNG's
+   intrinsic size and swallowing a phone screen. */
+const GEM = "h-auto w-[clamp(26px,6vw,50px)]";
+
+/** A pair of emeralds flanking the logo, one on each side. */
+function GemPair({ left, right }: { left: string; right: string }) {
+  return (
+    <div className="flex w-full max-w-lg items-center justify-between px-[8%]">
+      <img src={`${GEMS}/${left}-Gem.png`} alt="" aria-hidden="true" className={GEM} />
+      <img src={`${GEMS}/${right}-Gem.png`} alt="" aria-hidden="true" className={GEM} />
+    </div>
+  );
+}
+
 export function Sponsors() {
     return(
         <section
             id="sponsors"
             aria-label="Our sponsor"
-            className="relative min-h-95 scroll-mt-24 overflow-hidden bg-[linear-gradient(180deg,#010103_0%,#030305_27.79%,#380104_48.55%,#4B0308_59.21%,#65040B_66.92%,#811008_76%,#B44902_87.67%,#E67906_100%)] py-20 sm:min-h-140"
+            className="relative scroll-mt-24 overflow-hidden bg-[linear-gradient(180deg,#010103_0%,#030305_27.79%,#380104_48.55%,#4B0308_59.21%,#65040B_66.92%,#811008_76%,#B44902_87.67%,#E67906_100%)] px-4 pt-[clamp(48px,10vw,80px)] pb-[clamp(64px,12vw,120px)]"
         >
            <LavaDecor />
 
-           <div className="section-shell min-h-75 sm:min-h-120">
-            <div className="flex items-center justify-center gap-4 sm:gap-14">
-            
-            <h2 
-                className="whitespace-nowrap text-center text-[clamp(2.1rem,8vw,5rem)] font-bold text-white leading-none"
-                style={{
-                    color: "white",
-                    textShadow: "3px 3px 0px hsla(92, 81%, 42%, 1)",
-                }}
+           {/* one centred column: everything lines up from a single rule
+               instead of five separate mx-auto / justify-between blocks */}
+           <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-[clamp(18px,4vw,34px)]">
+
+            <h2
+                className="whitespace-nowrap text-center text-[clamp(2.1rem,8vw,5rem)] font-bold leading-none text-white"
+                style={{ textShadow: "3px 3px 0px hsla(92, 81%, 42%, 1)" }}
             >
                 Our Sponsor
             </h2>
-            
-            </div>
 
-            <div className="site-plus-decor absolute left-[clamp(1rem,4vw,3.5rem)] top-11.5 text-2xl font-light leading-none text-white sm:left-[25.5%] sm:top-22.5 sm:text-4xl">
-            
-            </div>
-
-            <p 
-                className="mx-auto mt-10 mb-25 max-w-none whitespace-nowrap text-center text-[clamp(1.25rem,3.25vw,2.25rem)] font-semibold leading-snug tracking-wide text-white"
-                style={{
-                    color: "white",
-                    textShadow: "2px 2px 0px hsla(92, 81%, 42%, 1)",
-                }}
+            {/* no `whitespace-nowrap`: at the 1.25rem floor this sentence is
+                wider than a phone and drags the whole page sideways */}
+            <p
+                className="max-w-2xl text-balance text-center text-[clamp(1.05rem,3.25vw,2rem)] font-semibold leading-snug tracking-wide text-white"
+                style={{ textShadow: "2px 2px 0px hsla(92, 81%, 42%, 1)" }}
             >
                 Proudly sponsored by our host institution:
             </p>
-            <div className="my-4 flex items-center relative overflow-hidden">
-                <img
-                    src="/Sections/Sponsors/Gems/Yellow-Gem.png"
-                    alt="Yellow Gem"
-                    className=" mx-auto h-auto w-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
 
+            {/* Sonic carrying the emerald — decoration, so phones drop it
+                entirely: below 640px it is the widest thing in the column and
+                crowds the logo. `hidden sm:flex` rather than a CSS media query
+                so it never renders at all on a phone.
+
+                The two of them are a flex pair because they used to be a
+                centred-absolute gem sitting on top of an in-flow Sonic, which
+                overlapped him at every width. */}
+            <div className="hidden items-center justify-center gap-[clamp(2px,1.5vw,14px)] sm:flex">
                 <img
-                    src="/Sections/Sponsors/yellow-sonic.png"
-                    alt="Yellow sonic"
-                    className="h-auto w-auto ml-10 "
+                    src="/sections/Sponsors/yellow-sonic.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-auto w-[clamp(72px,17vw,124px)]"
                 />
+                <img
+                    src={`${GEMS}/Yellow-Gem.png`}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-auto w-[clamp(44px,10vw,74px)]"
+                />
+            </div>
+
+            <GemPair left="Red" right="Blue" />
+
+            <img
+                src="/sections/Sponsors/Nit-Sponsors-logo.png"
+                alt="Numidia Institute of Technology"
+                className="block h-auto w-[clamp(165px,45vw,330px)]"
+            />
+
+            <GemPair left="Cyan" right="Green" />
+
+            <img
+                src={`${GEMS}/Purple-Gem.png`}
+                alt=""
+                aria-hidden="true"
+                className={GEM}
+            />
 
             </div>
 
-                <div className="flex justify-between items-center my-6 px-[16%]">
-                    <img
-                        src="/Sections/Sponsors/Gems/Red-Gem.png"
-                        alt="Red Gem"
-                        className="block"
-                    />
-
-                    <img
-                        src="/Sections/Sponsors/Gems/Blue-Gem.png"
-                        alt="Blue Gem"
-                        className="block"
-                    />
-                </div>
-
-                <img
-                    src="/Sections/Sponsors/Nit-Sponsors-logo.png"
-                    alt="Nit logo"
-                    className="mx-auto block h-auto w-auto "
-                />
-
-                <div className="flex justify-between items-center my-6 px-[16%]">
-                    <img
-                        src="/Sections/Sponsors/Gems/Cyan-Gem.png"
-                        alt="Cyan Gem"
-                        className="block"
-                    />
-
-                    <img
-                        src="/Sections/Sponsors/Gems/Green-Gem.png"
-                        alt="Green Gem"
-                        className="block"
-                    />
-                </div>
-
-                <img
-                    src="/Sections/Sponsors/Gems/Purple-Gem.png"
-                    alt="Purple Gem"
-                    className="my-4 mx-auto block h-auto w-auto"
-                />
-
-            <div className="relative isolate mx-auto mt-[clamp(28px,8vw,55px)] grid h-37.5 w-[clamp(230px,32vw,377px)] place-items-center">
-            
-            
-            </div>
-
-            
-            </div>
-        
         </section>
     )
 }

@@ -11,6 +11,7 @@ import {
   DESIGN_WIDTH,
   DECOR,
   HEADING,
+  TYPE,
   INK_LIFT,
   box,
   checkerStyle,
@@ -40,20 +41,42 @@ export function JammyJamByTheDigits({
 }: JammyJamByTheDigitsProps) {
   return (
     <div
-      className={cn("relative w-full overflow-hidden", className)}
+      className={cn("jjd relative w-full overflow-hidden", className)}
       style={{
         containerType: "inline-size",
         [CANVAS_WIDTH_VAR]: CANVAS_WIDTH,
       } as CSSProperties}
     >
-      
+
       <div className="absolute inset-0" style={checkerStyle()} />
+
+      {/* Phones get a stacked list instead of the scaled canvas below. The
+          canvas is a 1440px design shrunk by cqw, so at 375px wide its body
+          text lands at ~9px — proportionally correct and completely
+          unreadable. Same content, same palette, laid out to be read. */}
+      <ul className="jjd__stack">
+        <li className="jjd__stack-head">
+          <h2 style={{ color: HEADING.color, letterSpacing: HEADING.letterSpacing }}>
+            Jammy Jam by Digits
+          </h2>
+        </li>
+        {cards.map((card) => (
+          <li key={card.id} className="jjd__card" style={{ borderColor: card.bezelColor }}>
+            <img src={card.icon.src} alt="" aria-hidden="true" />
+            <div>
+              <h3 style={{ color: TYPE.titleColor }}>{card.title}</h3>
+              <strong style={{ color: TYPE.bodyColor }}>{card.value}</strong>
+              <p style={{ color: TYPE.bodyColor }}>{card.description}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
 
       <img
         src={`${ART}/road.svg`}
         alt=""
         aria-hidden="true"
-        className="absolute block max-w-none"
+        className="jjd__bleed absolute block max-w-none"
         style={{
           left: w(BLEED.road.left),
           top: s(BLEED.road.top),
@@ -67,7 +90,7 @@ export function JammyJamByTheDigits({
         src={`${ART}/knuckles.png`}
         alt=""
         aria-hidden="true"
-        className="absolute block max-w-none"
+        className="jjd__bleed absolute block max-w-none"
         style={{
           left: w(BLEED.knuckles.left),
           top: s(BLEED.knuckles.top),
@@ -79,8 +102,7 @@ export function JammyJamByTheDigits({
 
       <section
         aria-labelledby={HEADING_ID}
-        
-        className="relative mx-auto w-full"
+        className="jjd__canvas relative mx-auto w-full"
         style={{
         
           maxWidth: DESIGN_WIDTH,
@@ -130,7 +152,7 @@ export function JammyJamByTheDigits({
         src={`${ART}/rouge_sign.png`}
         alt=""
         aria-hidden="true"
-        className="absolute block max-w-none"
+        className="jjd__bleed absolute block max-w-none"
         style={{
           left: s(BLEED.rougeSign.left),
           top: s(BLEED.rougeSign.top),

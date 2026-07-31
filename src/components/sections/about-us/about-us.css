@@ -5,6 +5,13 @@
    ========================================================================== */
 
 .au {
+  /* Pulled up a hair so it overlaps the hero. The hero is sized in `svh`, which
+     lands on a fractional pixel on most phones, and the browser rounds the two
+     section boxes independently — leaving a 1px seam where neither paints and
+     the dark page background (#300401) shows through as a line across the sky.
+     Both skies are #c8e6fe here, so a 1px overlap is invisible. */
+  margin-top: -1px;
+
   --au-board: #4b3fb5;
   --au-board-deep: #362a92;
   --au-frame: #9aa0b8;
@@ -280,7 +287,7 @@
 }
 
 @media (max-width: 720px) {
-  .au { padding-top: 64px; }
+  .au { padding: 64px 14px 0; }
   .au__board {
     min-height: 0;
     padding: 30px 24px;
@@ -291,10 +298,26 @@
       0 8px 0 rgba(0, 0, 0, 0.3);
   }
   .au__copy { line-height: 1.9; }
-  /* padding-bottom stays on the base rule — its 230px floor already clears the
-     whole ground strip at this width */
-  .au__what { margin-top: 36px; }
+  /* Both columns run near full width here. At 74% of a 375px screen the copy
+     was a 277px ribbon, which turns every line into two. padding-bottom stays
+     on the base rule — its 230px floor already clears the whole ground strip
+     at this width. */
+  .au__board-wrap { width: min(1180px, 94%); }
+  .au__what { width: min(1180px, 92%); margin-top: 36px; }
   .au__platform { width: 78%; }
+
+  /* The clouds bleed off the edges at desktop proportions; on a phone that is
+     most of the sky, so they shrink and the second one gets out of the way of
+     the WHAT IS heading. */
+  .au__cloud { width: 34% !important; }
+}
+
+/* Very small phones: the sprites are sized as a % of the viewport, so below
+   this they stop reading as characters at all. Dropping the two loose ones
+   keeps the scene clean — the ground strip still carries Sonic and the rings. */
+@media (max-width: 420px) {
+  .au__sprite--float { display: none; }
+  .au__title--what { letter-spacing: 0.06em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
