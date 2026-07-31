@@ -96,35 +96,42 @@ export async function exportRows(): Promise<string[][]> {
 }
 
 /**
- * A team is just a shared team_name — there is no teams table — so every row on
- * that name has to be rewritten together to stay consistent. team_members holds
- * the OTHER members, the same convention the sign-up form uses.
+ * A team is just a shared team_name — there is no teams table — so the rows on
+ * that name have to agree on how big the squad is.
+ *
+ * Deliberately narrow: it only ever reconciles `team_size`, and never touches
+ * `team_members`. Those are the names the registrant typed on the form — their
+ * claimed squad — and they are the only record of who has not signed up yet.
+ * Overwriting them with the registered roster erased exactly the information
+ * the dashboard needs to chase missing teammates.
+ *
+ * The size settles on the largest honest number: never below the head-count
+ * actually registered, never below the biggest size anyone declared.
  */
 export async function syncTeam(teamName: string) {
   const db = supabaseAdmin();
 
   const { data, error } = await db
     .from("registrations")
-    .select("id, first_name, last_name")
+    .select("id, team_size")
     .eq("team_name", teamName);
 
   if (error) throw new Error(error.message);
 
-  const roster = (data ?? []).map((row) => ({
-    id: row.id as string,
-    name: `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim(),
-  }));
+  const rows = data ?? [];
+  if (!rows.length) return;
 
-  for (const member of roster) {
+  const size = Math.max(
+    rows.length,
+    ...rows.map((row) => (row.team_size as number | null) ?? 0),
+  );
+
+  for (const row of rows) {
+    if (row.team_size === size) continue;
     const { error: writeError } = await db
       .from("registrations")
-      .update({
-        team_size: roster.length,
-        team_members: roster
-          .filter((other) => other.id !== member.id)
-          .map((other) => other.name),
-      })
-      .eq("id", member.id);
+      .update({ team_size: size })
+      .eq("id", row.id);
 
     if (writeError) throw new Error(writeError.message);
   }

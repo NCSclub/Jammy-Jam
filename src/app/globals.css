@@ -1563,8 +1563,9 @@ body {
   overflow-wrap: anywhere;
   color: #10244a;
   font-family: var(--font-sonic-hud), Arial, sans-serif;
-  font-size: clamp(26px, 3.4vw, 34px);
-  line-height: 1.15;
+  font-size: clamp(34px, 4.6vw, 48px);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
 }
 
 .team-card__head .badges { margin: 0; }
@@ -1596,6 +1597,55 @@ body {
 .team-card__member-body .card-actions { flex-wrap: wrap; margin-top: 10px; }
 .team-card__member-body .card-actions button:first-child { margin-right: 0; }
 .team-card__member .avatar { width: 38px; height: 38px; flex-basis: 38px; font-size: 16px; }
+
+/* Teammates named on the form who have not signed up yet. A run-on sentence of
+   comma-separated names was unreadable the moment a team named three people —
+   this is a list you can actually work down. */
+.team-card__missing {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid #ffd9a1;
+  border-radius: 2px;
+  background: #fff9ee;
+}
+
+.team-card__missing-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: #8a5b00;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.team-card__missing-title span {
+  padding: 1px 8px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #c98f12;
+  font-size: 11px;
+}
+
+.team-card__missing ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-card__missing li {
+  padding: 5px 11px;
+  border: 1px solid #f0dcbb;
+  border-radius: 2px;
+  color: #6b4a10;
+  background: #ffffff;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
 
 /* --------------------------------------------------------------------------
    List view

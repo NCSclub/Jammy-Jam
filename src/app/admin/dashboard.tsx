@@ -946,9 +946,32 @@ function TeamCard({
   onDelete: (member: Participant) => void;
   onLeave: (member: Participant) => void;
 }) {
+  const registered = group.members.length;
   const present = group.members.filter((member) => member.checkedIn).length;
-  const size = group.members.length;
   const staying = group.members.filter((member) => member.staying).length;
+
+  /* Names the members typed on the form, minus anyone who has since registered
+     — so what is left is who the squad is still waiting on. A person drops off
+     this list the moment their own sign-up lands. */
+  const registeredNames = new Set(
+    group.members.map((member) => member.name.trim().toLowerCase()),
+  );
+  const missing = [
+    ...new Set(
+      group.members
+        .flatMap((member) => member.teamMembers)
+        .map((name) => name.trim())
+        .filter(Boolean),
+    ),
+  ].filter((name) => !registeredNames.has(name.toLowerCase()));
+
+  /* How big the squad actually is: what they declared on the form, but never
+     less than the people who have registered plus the ones still named. */
+  const declared = Math.max(
+    registered + missing.length,
+    ...group.members.map((member) => member.teamSize ?? 0),
+  );
+  const complete = registered >= declared;
 
   return (
     <article className="team-card">
@@ -957,9 +980,11 @@ function TeamCard({
           <p className="section-kicker">TEAM</p>
           <h3>{group.name}</h3>
           <div className="badges">
-            <span>◇ {size} member{size === 1 ? "" : "s"}</span>
-            <span className={present === size ? "stay-badge" : ""}>
-              {present}/{size} checked in
+            <span className={complete ? "stay-badge" : "partial-badge"}>
+              ◇ {registered}/{declared} registered
+            </span>
+            <span className={present === registered ? "stay-badge" : ""}>
+              ✓ {present}/{registered} checked in
             </span>
             {staying ? <span className="stay-badge">☾ {staying} staying</span> : null}
           </div>
@@ -1007,32 +1032,19 @@ function TeamCard({
         ))}
       </div>
 
-      <MissingTeammates group={group} />
+      {missing.length ? (
+        <div className="team-card__missing">
+          <p className="team-card__missing-title">
+            ⚠ Still to register <span>{missing.length}</span>
+          </p>
+          <ul>
+            {missing.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </article>
-  );
-}
-
-/**
- * Names typed into the sign-up form by someone who listed teammates, minus
- * anyone who went on to register themselves — so what is left is the people HR
- * is still waiting on. Without the subtraction this just repeats the member
- * list above, since joining a team rewrites team_members to the registered
- * roster.
- */
-function MissingTeammates({ group }: { group: TeamGroup }) {
-  const registered = new Set(
-    group.members.map((member) => member.name.trim().toLowerCase()),
-  );
-  const missing = [
-    ...new Set(group.members.flatMap((member) => member.teamMembers)),
-  ].filter((name) => name.trim() && !registered.has(name.trim().toLowerCase()));
-
-  if (!missing.length) return null;
-
-  return (
-    <p className="team-roster">
-      Named but not registered: {missing.join(", ")}
-    </p>
   );
 }
 
