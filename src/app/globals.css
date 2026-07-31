@@ -1554,10 +1554,17 @@ body {
   border-bottom: 1px solid #dde9f6;
 }
 
+/* The team name is what you scan for when you are looking a squad up at the
+   door, so it is the biggest thing on the card — bigger than the member names
+   inside it. overflow-wrap because nothing stops someone naming their team a
+   single 40-character word. */
 .team-card__head h3 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+  color: #10244a;
   font-family: var(--font-sonic-hud), Arial, sans-serif;
-  font-size: 19px;
+  font-size: clamp(26px, 3.4vw, 34px);
+  line-height: 1.15;
 }
 
 .team-card__head .badges { margin: 0; }
