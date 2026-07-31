@@ -1,0 +1,293 @@
+/* ==========================================================================
+   ABOUT US / WHAT IS JAMMY JAM — the sky section
+   Sprites for the characters, platforms and rings; the signboard, clouds,
+   titles and ground are CSS.
+   ========================================================================== */
+
+.au {
+  --au-board: #4b3fb5;
+  --au-board-deep: #362a92;
+  --au-frame: #9aa0b8;
+  --au-frame-dark: #5f6480;
+  --au-gold: #ffd23f;
+  --au-cyan: #57d8ff;
+  --au-red: #ff4d4d;
+  --au-pink: #ff5ea8;
+  --au-navy: #123163;
+
+  position: relative;
+  overflow: hidden;
+  padding: 74px 20px 0;
+  /* Opens on #c8e6fe — the exact colour the hero's gradient ends on — so the
+     two sky sections read as one continuous sky, then deepens toward the
+     ground the way the mockup does. */
+  background: linear-gradient(
+    180deg,
+    #c8e6fe 0%,
+    #8fc9f7 8%,
+    #5aa5ee 26%,
+    #3282dd 50%,
+    #1f66c8 74%,
+    #1a5bb8 100%
+  );
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   Drifting clouds, reusing the hero's cloud art
+   -------------------------------------------------------------------------- */
+.au__cloud {
+  position: absolute;
+  z-index: 0;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  /* alternate, so they ease back and forth instead of snapping at the loop.
+     Kept tiny — these are edge-anchored, and a wide drift would pull them
+     away from the edge they are supposed to be bleeding off. */
+  animation: au-drift ease-in-out infinite alternate;
+}
+
+@keyframes au-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+
+/* --------------------------------------------------------------------------
+   Titles
+   -------------------------------------------------------------------------- */
+.au__title {
+  position: relative;
+  z-index: 3;
+  margin: 0 0 28px;
+  color: #ffffff;
+  font-size: clamp(22px, 3.4vw, 40px);
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 4px 0 var(--au-navy), 0 7px 0 rgba(0, 0, 0, 0.35);
+}
+
+.au__title--about {
+  color: var(--au-navy);
+  text-shadow: 0 3px 0 #ffffff, 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* the WHAT IS heading carries a red shadow in the prototype, not navy */
+.au__title--what {
+  font-size: clamp(26px, 4.2vw, 56px);
+  text-shadow: 0 4px 0 #e8404a, 0 8px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   The signboard: grey pixel frame around a purple panel, on a post
+   -------------------------------------------------------------------------- */
+.au__board-wrap {
+  position: relative;
+  z-index: 3;
+  width: min(1180px, 84%);
+  margin: 0 auto;
+}
+
+/* Chunky grey frame like the schedule board: a thick grey band, a hard black
+   outline inside it, then the purple panel. */
+.au__board {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 500px;
+  padding: 72px 64px;
+  background: linear-gradient(180deg, var(--au-board) 0%, var(--au-board-deep) 100%);
+  box-shadow:
+    inset 0 0 0 20px var(--au-frame),
+    inset 0 0 0 26px #0d0a24,
+    inset 0 0 0 30px var(--au-frame-dark),
+    0 12px 0 rgba(0, 0, 0, 0.3);
+  /* stepped corners, scaled up to suit the heavier frame */
+  clip-path: polygon(
+    0 20px, 10px 20px, 10px 10px, 20px 10px, 20px 0,
+    calc(100% - 20px) 0, calc(100% - 20px) 10px, calc(100% - 10px) 10px,
+    calc(100% - 10px) 20px, 100% 20px,
+    100% calc(100% - 20px), calc(100% - 10px) calc(100% - 20px),
+    calc(100% - 10px) calc(100% - 10px), calc(100% - 20px) calc(100% - 10px),
+    calc(100% - 20px) 100%,
+    20px 100%, 20px calc(100% - 10px), 10px calc(100% - 10px),
+    10px calc(100% - 20px), 0 calc(100% - 20px)
+  );
+}
+
+.au__copy {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(13px, 1.85vw, 25px);
+  line-height: 1.95;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  /* hard pixel outline rather than a soft shadow */
+  text-shadow:
+    -2px 0 0 #0d0a24, 2px 0 0 #0d0a24,
+    0 -2px 0 #0d0a24, 0 2px 0 #0d0a24,
+    0 4px 0 rgba(0, 0, 0, 0.4);
+}
+
+.au__copy .gold { color: var(--au-gold); }
+.au__copy .cyan { color: var(--au-cyan); }
+.au__copy .red { color: var(--au-red); }
+.au__copy .pink { color: var(--au-pink); }
+
+/* the post holding the board up */
+.au__post {
+  position: relative;
+  z-index: 2;
+  width: 22px;
+  height: 46px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, #b9bed2 0 6px, #8f95ae 6px 16px, #6c7189 16px);
+}
+
+/* --------------------------------------------------------------------------
+   Floating platforms
+   -------------------------------------------------------------------------- */
+.au__platform {
+  position: relative;
+  z-index: 1;
+  display: block;
+  /* the rock is roughly half the section width, well inside the board above it */
+  width: min(620px, 52%);
+  height: auto;
+  margin: -6px auto 0;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* the small ledges clinging to the left and right edges */
+.au__ledge {
+  position: absolute;
+  z-index: 1;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Characters and rings
+   -------------------------------------------------------------------------- */
+.au__sprite {
+  position: absolute;
+  z-index: 3;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.au__sprite--float {
+  animation: au-hover 3s ease-in-out infinite;
+}
+
+.au__ring {
+  position: absolute;
+  z-index: 2;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: au-spin 4.2s steps(4, end) infinite;
+}
+
+@keyframes au-hover {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes au-spin {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.25); }
+}
+
+/* --------------------------------------------------------------------------
+   WHAT IS JAMMY JAM
+   -------------------------------------------------------------------------- */
+.au__what {
+  position: relative;
+  z-index: 3;
+  width: min(1180px, 74%);
+  margin: 132px auto 0;
+  /* room for the grass and the characters standing on it */
+  padding-bottom: 160px;
+}
+
+/* Dark type on the pale sky here, unlike the white text on the purple board.
+   The forced break keeps "…online and 2" as the first line. */
+.au__what .au__copy {
+  color: #0f2350;
+  text-align: center;
+  font-size: clamp(15px, 2.2vw, 30px);
+  line-height: 1.75;
+  letter-spacing: 0.04em;
+  text-shadow:
+    -2px 0 0 rgba(255, 255, 255, 0.6), 2px 0 0 rgba(255, 255, 255, 0.6),
+    0 -2px 0 rgba(255, 255, 255, 0.6), 0 2px 0 rgba(255, 255, 255, 0.6);
+}
+
+.au__br { display: none; }
+
+@media (min-width: 900px) {
+  .au__br { display: inline; }
+}
+
+/* --------------------------------------------------------------------------
+   Grass floor closing the section
+   -------------------------------------------------------------------------- */
+/* Grass only — no soil. The digits section directly below opens with the
+   checkered dirt, so adding it here would stack two grounds. */
+.au__ground {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* above the clouds so they run behind the grass rather than over it */
+  z-index: 1;
+  height: 42px;
+  pointer-events: none;
+  background-image:
+    /* blades breaking the top edge */
+    linear-gradient(90deg,
+      transparent 0 15.6%, #8ae71a 15.6% 34.4%,
+      transparent 34.4% 59.4%, #8ae71a 59.4% 71.9%,
+      transparent 71.9% 87.5%, #8ae71a 87.5% 100%),
+    linear-gradient(#8ae71a 0 0),
+    linear-gradient(#4cae04 0 0),
+    linear-gradient(#1c6d08 0 0);
+  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat;
+  background-size:
+    26px 6px,
+    100% 8px, 100% 26px, 100% 42px;
+  background-position:
+    0 0,
+    0 6px, 0 6px, 0 6px;
+}
+
+@media (max-width: 720px) {
+  .au { padding-top: 64px; }
+  .au__board {
+    min-height: 0;
+    padding: 30px 24px;
+    box-shadow:
+      inset 0 0 0 12px var(--au-frame),
+      inset 0 0 0 16px #0d0a24,
+      inset 0 0 0 19px var(--au-frame-dark),
+      0 8px 0 rgba(0, 0, 0, 0.3);
+  }
+  .au__copy { line-height: 1.9; }
+  .au__what { margin-top: 76px; padding-bottom: 110px; }
+  .au__ground { height: 68px; }
+  .au__platform { width: 78%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .au__cloud,
+  .au__sprite--float,
+  .au__ring {
+    animation: none;
+  }
+}

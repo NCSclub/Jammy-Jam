@@ -4,6 +4,7 @@ import CloudField from "@/components/CloudField";
 import Countdown from "@/components/Countdown";
 import HeroActions from "@/components/HeroActions";
 import { siteConfig } from "@/config/site";
+import { AboutUs } from "@/components/sections/about-us";
 import { JammyJamByTheDigits } from "@/components/sections/jammy-jam-by-the-digits";
 import { EventSchedule } from "@/components/sections/event-schedule";
 import { Sponsors } from "@/components/sections/Sponsors";
@@ -58,6 +59,7 @@ export default function Home() {
           </div>
         </section>
 
+        <AboutUs />
         <JammyJamByTheDigits />
         <EventSchedule />
         <Sponsors />
