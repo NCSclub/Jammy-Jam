@@ -4,14 +4,16 @@ import "./about-us.css";
 const ART = "/sections/about";
 const HEADING_ID = "about-us-heading";
 
-/* The two big pixel clouds bleed off the left and right edges, exactly as in
-   the prototype: one high on the left, one low on the right sitting down on
-   the grass. Everything else is a smaller filler cloud. */
+/* Five clouds, placed off the prototype: two down the left edge, three on the
+   right. Every position below is the measured top edge as a percentage of the
+   section, so they hold their spot as the section grows. */
 const CLOUDS = [
-  /* big one on the left, flush with the edge so most of it is on screen */
+  /* Big one on the left, flush with the edge so most of it is on screen. The
+     prototype puts its top edge 19% down the section — level with the middle
+     of the signboard — not up by the ledge. */
   {
     src: `${ART}/cloud-left.png`,
-    style: { left: "0", top: "5%", width: "21%" },
+    style: { left: "0", top: "19%", width: "21%" },
     duration: "44s",
   },
   /* second left cloud, level with the WHAT IS block's heading. Anchored from
@@ -20,6 +22,20 @@ const CLOUDS = [
     src: `${ART}/cloud-left.png`,
     style: { left: "0", top: "56%", width: "20%" },
     duration: "52s",
+  },
+  /* Two puffs high on the right, running off the edge beside the ring. The art
+     is already cropped flush on its right side, so right:0 shows all of it. */
+  {
+    src: `${ART}/cloud-right-top.png`,
+    style: { right: "0", top: "6%", width: "11%" },
+    duration: "50s",
+  },
+  /* Whole cloud level with the platform, tucked just in from the edge rather
+     than bleeding off it — the one place in the section a cloud is uncut. */
+  {
+    src: `${ART}/cloud-right-mid.png`,
+    style: { right: "1%", top: "52%", width: "17%" },
+    duration: "46s",
   },
   /* big one on the right, flush with the edge and cut by the grass */
   {
@@ -132,39 +148,27 @@ export function AboutUs() {
         <Copy pieces={WHAT_IS} />
       </div>
 
-      {/* Sonic and Shadow stand on the grass, feet just above the blades */}
-      <img
-        className="au__sprite"
-        src={`${ART}/sonic-emerald.png`}
-        alt=""
-        aria-hidden="true"
-        style={{ left: "12%", bottom: "34px", width: "9%" }}
-      />
+      {/* Shadow stands on the grass. Sonic, the ring row, the palm tree and the
+          flower all live inside the ground strip below, so he is the only loose
+          character left. He is anchored with a percentage margin rather than
+          `bottom`, because a percentage `bottom` resolves against the section's
+          height while the strip's grass line is a fraction of its WIDTH —
+          3.55% puts his feet exactly where Sonic's are. `right: 26%` clears the
+          flower, which the strip draws 18-23% in from the right edge. */}
       <img
         className="au__sprite"
         src={`${ART}/shadow.png`}
         alt=""
         aria-hidden="true"
-        style={{ right: "16%", bottom: "34px", width: "8%" }}
+        style={{ right: "26%", bottom: 0, marginBottom: "3.55%", width: "8%" }}
       />
 
-      {/* the row of rings along the grass */}
-      {[0, 1, 2, 3].map((index) => (
-        <img
-          key={`floor-ring-${index}`}
-          className="au__ring"
-          src={`${ART}/ring.png`}
-          alt=""
-          aria-hidden="true"
-          style={{
-            left: `${31 + index * 7.5}%`,
-            bottom: "52px",
-            width: "clamp(40px, 4vw, 74px)",
-          }}
-        />
-      ))}
-
-      <div className="au__ground" aria-hidden="true" />
+      <img
+        className="au__ground"
+        src={`${ART}/ground.png`}
+        alt=""
+        aria-hidden="true"
+      />
     </section>
   );
 }

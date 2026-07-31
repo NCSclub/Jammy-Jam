@@ -1226,6 +1226,408 @@ body {
   line-height: 1.4;
 }
 
+/* --------------------------------------------------------------------------
+   Teaming up — the control that pairs solo people off, in their own card
+   -------------------------------------------------------------------------- */
+.team-up {
+  margin: 0 0 14px;
+}
+
+.team-up__select,
+.team-up__leave {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px dashed #a8c8ea;
+  border-radius: 2px;
+  color: #0871c9;
+  background: #f4faff;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.team-up__select:hover,
+.team-up__leave:hover {
+  border-style: solid;
+  background: #e9f6ff;
+}
+
+.team-up__select:disabled,
+.team-up__leave:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* leaving is a teardown, so it reads in the same red as Delete */
+.team-up__leave {
+  border-color: #f0c9d2;
+  color: #b2445c;
+  background: #fff6f8;
+}
+
+.team-up__leave:hover {
+  background: #ffeef2;
+}
+
+/* the checkbox list inside the squad builder */
+.team-picker {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #d8e6f6;
+  border-radius: 2px;
+  background: #f8fbff;
+}
+
+.team-picker legend {
+  padding: 0 6px;
+  color: #48617f;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.team-picker legend small {
+  color: #7d90ab;
+  font-weight: 500;
+}
+
+.team-picker__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 2px;
+  cursor: pointer;
+}
+
+.team-picker__row + .team-picker__row {
+  border-top: 1px solid #e7f0fa;
+}
+
+.team-picker__row span {
+  display: grid;
+  color: #1b3357;
+  font-size: 15px;
+}
+
+.team-picker__row small {
+  color: #7d90ab;
+  font-size: 12px;
+}
+
+.team-picker__row input {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  accent-color: #0871c9;
+}
+
+.team-picker__row:has(input:disabled) {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --------------------------------------------------------------------------
+   Header actions, and the badge that doubles as a switch
+   -------------------------------------------------------------------------- */
+.heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.badges .badge-toggle {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.badges .badge-toggle:hover {
+  filter: brightness(0.96);
+}
+
+.badges .badge-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* --------------------------------------------------------------------------
+   Overnight panel — the two head-counts, each a filter
+   -------------------------------------------------------------------------- */
+.night-panel {
+  margin-bottom: 22px;
+  padding: 21px;
+  border: 2px solid #cfdeef;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 4px 4px 0 #dbeaff;
+}
+
+.night-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.night-column {
+  padding: 14px;
+  border: 2px solid #d8e6f6;
+  border-radius: 2px;
+  background: #f8fbff;
+}
+
+.night-column.active {
+  border-color: #36baf2;
+  box-shadow: 3px 3px 0 #cbe9fb;
+}
+
+.night-column__head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  background: none;
+  color: #48617f;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.night-column__head strong {
+  padding: 3px 11px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #7d90ab;
+  font-size: 14px;
+}
+
+.night-column.yes .night-column__head strong { background: #16855a; }
+.night-column.no .night-column__head strong { background: #8a99ad; }
+
+.night-column__view {
+  width: 100%;
+  min-height: 34px;
+  margin-top: 10px;
+  border: 1px solid #c9daee;
+  border-radius: 2px;
+  color: #48617f;
+  background: #ffffff;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.night-column__view:hover { background: #eef6ff; }
+.night-column__view:disabled { opacity: 0.45; cursor: default; }
+
+.night-list {
+  max-height: 55vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.night-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px;
+  border-bottom: 1px solid #e7f0fa;
+}
+
+.night-list li span { display: grid; color: #1b3357; font-size: 15px; }
+.night-list li small { color: #7d90ab; font-size: 12px; }
+.night-list li em { color: #5f7392; font-size: 12px; font-style: normal; }
+.night-list__empty { color: #7d90ab; }
+
+.count-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #36baf2;
+  font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   Team cards — one per squad, members folded inside
+   -------------------------------------------------------------------------- */
+.team-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+}
+
+.team-card {
+  padding: 21px;
+  border: 2px solid #cfdeef;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 4px 4px 0 #dbeaff;
+}
+
+.team-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #dde9f6;
+}
+
+.team-card__head h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 19px;
+}
+
+.team-card__head .badges { margin: 0; }
+
+.team-card__members { display: grid; gap: 12px; padding-top: 14px; }
+
+.team-card__member {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e0ebf8;
+  border-radius: 2px;
+  background: #f8fbff;
+}
+
+.team-card__member-body { min-width: 0; flex: 1; }
+.team-card__member-body h4 {
+  margin: 0 0 3px;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 14px;
+}
+.team-card__member-body p {
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+  color: #5f7392;
+  font-size: 13px;
+}
+.team-card__member-body small { color: #8192a9; font-size: 12px; }
+.team-card__member-body .card-actions { flex-wrap: wrap; margin-top: 10px; }
+.team-card__member-body .card-actions button:first-child { margin-right: 0; }
+.team-card__member .avatar { width: 38px; height: 38px; flex-basis: 38px; font-size: 16px; }
+
+/* --------------------------------------------------------------------------
+   List view
+   -------------------------------------------------------------------------- */
+.list-wrap {
+  overflow-x: auto;
+  border: 2px solid #cfdeef;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 4px 4px 0 #dbeaff;
+}
+
+.list-table { width: 100%; border-collapse: collapse; text-align: left; }
+
+.list-table th {
+  padding: 13px 14px;
+  border-bottom: 2px solid #dde9f6;
+  background: #f2f7fd;
+  color: #48617f;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.list-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eaf2fb;
+  color: #33496b;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.list-table tr:last-child td { border-bottom: 0; }
+.list-table tbody tr:hover { background: #f8fbff; }
+.list-table__who { display: flex; align-items: center; gap: 11px; }
+.list-table__who .avatar { width: 36px; height: 36px; flex-basis: 36px; font-size: 15px; }
+.list-table__who strong { display: block; color: #12243f; font-size: 14px; }
+.list-table__who small,
+.list-table td > small { display: block; color: #8192a9; font-size: 12px; }
+.list-table__email { overflow-wrap: anywhere; }
+.list-table .card-actions { padding-top: 0; border-top: 0; }
+
+.list-table td > button {
+  min-height: 33px;
+  padding: 0 11px;
+  border: 1px solid #c9daee;
+  border-radius: 2px;
+  color: #48617f;
+  background: #f2f7fd;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.list-table td > button.checked-button {
+  border-color: #8ed7bf;
+  color: #0d7958;
+  background: #e9fbf4;
+}
+
+/* --------------------------------------------------------------------------
+   Modal extras — confirm buttons, inline rename field
+   -------------------------------------------------------------------------- */
+.modal-note { margin: 0 0 6px; color: #5f7392; font-size: 15px; line-height: 1.5; }
+.modal-buttons { display: flex; gap: 10px; margin-top: 8px; }
+.modal-buttons > button { flex: 1; }
+
+.danger-button {
+  min-height: 46px;
+  padding: 0 18px;
+  border: 2px solid #d83d5a;
+  border-radius: 2px;
+  color: #ffffff;
+  background: #e8556f;
+  box-shadow: 4px 4px 0 #ffd3dc;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.danger-button:hover { background: #d83d5a; }
+.danger-button:disabled { opacity: 0.6; cursor: default; }
+
+.stacked-label { display: grid; gap: 7px; margin-bottom: 16px; }
+.inline-field { display: flex; gap: 8px; }
+.inline-field input { flex: 1; }
+.inline-field .primary-button { flex: 0 0 auto; }
+
+.team-picker { margin-bottom: 14px; }
+.team-picker__row { justify-content: space-between; }
+.team-picker__row .delete-button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #ffc2cc;
+  border-radius: 2px;
+  color: #d83d5a;
+  background: #fff1f4;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+@media (max-width: 620px) {
+  .team-grid { grid-template-columns: 1fr; }
+  .heading-actions { width: 100%; }
+}
+
 /* Five tabs instead of three — let them wrap and tighten the padding a little
    so they still fit beside the search box */
 .admin-dashboard .filter-tabs {

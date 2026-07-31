@@ -1,53 +1,151 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  deleteParticipant,
-  exportRows,
-  logout,
-  saveParticipant,
-  setCheckedIn,
-} from "./actions";
 import type { Participant } from "./types";
 
-type Filter = "all" | "solo" | "2" | "3" | "4";
+/**
+ * Every mutation is a plain fetch to /api/*. `api` throws with the route's own
+ * message, so a 409 shows "That email is already registered" rather than a
+ * generic failure, and run() surfaces it in the alert.
+ */
+async function api(url: string, init?: RequestInit) {
+  const response = await fetch(url, {
+    ...init,
+    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
+  });
+
+  if (response.status === 401) {
+    /* the session expired mid-shift — send them back to the password screen */
+    window.location.href = "/admin/login";
+    throw new Error("Session expired, sign in again");
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? "Something went wrong");
+  }
+
+  return response;
+}
+
+const patchParticipant = (id: string, changes: Record<string, unknown>) =>
+  api(`/api/registrations/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(changes),
+  });
+
+type Filter = "all" | "teams" | "solo" | "2" | "3" | "4";
+type ViewMode = "grid" | "list";
+type NightFilter = "yes" | "no" | null;
+type TeamGroup = { name: string; members: Participant[] };
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "all" },
+  { value: "teams", label: "teams" },
   { value: "solo", label: "solo" },
   { value: "2", label: "team of 2" },
   { value: "3", label: "team of 3" },
   { value: "4", label: "team of 4" },
 ];
 
+/** The sign-up form caps a squad at 4, so teams below that have room. */
+const TEAM_CAP = 4;
+
+type Patch = { id: string; changes: Partial<Participant> };
+
 export function Dashboard({ participants }: { participants: Participant[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+
+  /* Check-in is the one action HR repeats hundreds of times at the door, so it
+     paints immediately instead of waiting for the round trip. React holds the
+     patch until the transition settles, then drops it — by which point the
+     refreshed server data says the same thing, or the truth wins. */
+  const [items, applyPatch] = useOptimistic(
+    participants,
+    (state: Participant[], patch: Patch) =>
+      state.map((participant) =>
+        participant.id === patch.id
+          ? { ...participant, ...patch.changes }
+          : participant,
+      ),
+  );
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Participant | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [view, setView] = useState<ViewMode>("grid");
+  const [nightFilter, setNightFilter] = useState<NightFilter>(null);
+  const [viewingNight, setViewingNight] = useState<NightFilter>(null);
+  const [deleting, setDeleting] = useState<Participant | null>(null);
+  const [modifying, setModifying] = useState<TeamGroup | null>(null);
+  /* the solo people ticked for a brand-new squad; null means the builder is
+     closed. Seeded with whoever opened it. */
+  const [newTeam, setNewTeam] = useState<string[] | null>(null);
 
-  const teams = new Set(participants.map((item) => item.team).filter(Boolean)).size;
-  const checkedIn = participants.filter((item) => item.checkedIn).length;
-  const staying = participants.filter((item) => item.staying).length;
+  /* everything below reads the optimistic list, so a check-in moves the stat
+     cards and the overnight counts in the same paint as the badge */
+  const solos = useMemo(
+    () => items.filter((participant) => !participant.team),
+    [items],
+  );
+
+  const teams = new Set(items.map((item) => item.team).filter(Boolean)).size;
+  const checkedIn = items.filter((item) => item.checkedIn).length;
+
+  /* who is sleeping at the venue and who is not — the head-count HR needs for
+     mattresses, and the two lists behind it */
+  const nightGroups = useMemo(() => {
+    const yes: Participant[] = [];
+    const no: Participant[] = [];
+    for (const participant of items) {
+      (participant.staying ? yes : no).push(participant);
+    }
+    return { yes, no };
+  }, [items]);
 
   const visibleParticipants = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return participants.filter((participant) => {
+    return items.filter((participant) => {
       const matchesFilter =
         filter === "all" ||
+        (filter === "teams" && Boolean(participant.team)) ||
         (filter === "solo" && !participant.team) ||
-        (filter !== "solo" && participant.teamSize === Number(filter));
+        (filter !== "teams" &&
+          filter !== "solo" &&
+          participant.teamSize === Number(filter));
+      const matchesNight =
+        nightFilter === null ||
+        (nightFilter === "yes" ? participant.staying : !participant.staying);
       const matchesSearch =
         !needle ||
-        [participant.name, participant.email, participant.team, participant.university]
-          .some((value) => value?.toLowerCase().includes(needle));
-      return matchesFilter && matchesSearch;
+        [
+          participant.name,
+          participant.email,
+          participant.phone,
+          participant.team,
+          participant.university,
+        ].some((value) => value?.toLowerCase().includes(needle));
+      return matchesFilter && matchesNight && matchesSearch;
     });
-  }, [participants, query, filter]);
+  }, [items, query, filter, nightFilter]);
+
+  /* one card per team instead of one per person, built from whatever survived
+     the search and filters above */
+  const teamGroups = useMemo<TeamGroup[]>(() => {
+    const byName = new Map<string, Participant[]>();
+    for (const participant of visibleParticipants) {
+      if (!participant.team) continue;
+      const current = byName.get(participant.team) ?? [];
+      current.push(participant);
+      byName.set(participant.team, current);
+    }
+    return [...byName.entries()]
+      .map(([name, members]) => ({ name, members }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [visibleParticipants]);
 
   function openNewParticipant() {
     setEditing(null);
@@ -74,35 +172,80 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
     });
   }
 
+  /* Same as run(), but paints the change first. applyPatch has to be called
+     inside the transition or React throws — and if the write fails the patch is
+     dropped on the way out, so the row snaps back to the server's answer. */
+  function runOptimistic(patch: Patch, work: () => Promise<void>) {
+    startTransition(async () => {
+      applyPatch(patch);
+      try {
+        await work();
+        router.refresh();
+      } catch (error) {
+        window.alert(
+          error instanceof Error ? error.message : "Something went wrong",
+        );
+      }
+    });
+  }
+
+  function toggleCheckIn(participant: Participant) {
+    const next = !participant.checkedIn;
+    runOptimistic({ id: participant.id, changes: { checkedIn: next } }, () =>
+      patchParticipant(participant.id, { checkedIn: next }).then(() => undefined),
+    );
+  }
+
+  function toggleStaying(participant: Participant) {
+    const next = !participant.staying;
+    runOptimistic({ id: participant.id, changes: { staying: next } }, () =>
+      patchParticipant(participant.id, { staying: next }).then(() => undefined),
+    );
+  }
+
   function handleSave(formData: FormData) {
+    const payload = {
+      name: String(formData.get("name")),
+      email: String(formData.get("email")),
+      phone: String(formData.get("phone") ?? ""),
+      university: String(formData.get("university")),
+      level: String(formData.get("level")),
+      attendance: String(formData.get("attendance") ?? ""),
+      team: String(formData.get("team") || "").trim() || null,
+      staying: formData.get("staying") === "on",
+    };
+
     run(async () => {
-      await saveParticipant({
-        id: editing?.id ?? null,
-        name: String(formData.get("name")),
-        email: String(formData.get("email")),
-        university: String(formData.get("university")),
-        level: String(formData.get("level")),
-        team: String(formData.get("team") || "").trim() || null,
-        staying: formData.get("staying") === "on",
-      });
+      if (editing) await patchParticipant(editing.id, payload);
+      else
+        await api("/api/registrations", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
       setShowForm(false);
     });
   }
 
-  /* pulls every column from the database, not just what the cards render */
+  function handleCreateTeam(formData: FormData) {
+    const memberIds = newTeam ?? [];
+    run(async () => {
+      await api("/api/teams", {
+        method: "POST",
+        body: JSON.stringify({
+          teamName: String(formData.get("team") ?? ""),
+          memberIds,
+        }),
+      });
+      setNewTeam(null);
+    });
+  }
+
+  /* the route builds the CSV from every column, so the browser only has to
+     save the file it is handed */
   function exportCsv() {
     run(async () => {
-      const rows = await exportRows();
-      const csv = rows
-        .map((row) =>
-          row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","),
-        )
-        .join("\n");
-
-      /* BOM so Excel opens accented names correctly */
-      const blob = new Blob(["﻿" + csv], {
-        type: "text/csv;charset=utf-8",
-      });
+      const response = await api("/api/registrations/export");
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -112,6 +255,14 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
     });
   }
 
+  async function handleLogout() {
+    await fetch("/api/admin/logout", { method: "POST" });
+    /* a hard navigation, not router.replace(): the client router can answer
+       from its cached RSC payload, and /admin/login is a server component whose
+       whole job is to re-read the cookie. This guarantees it does. */
+    window.location.href = "/admin/login";
+  }
+
   return (
     <main className="admin-dashboard">
       <header className="admin-header">
@@ -119,9 +270,7 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           <Image src="/brand/jammy-jam-logo.png" alt="Jammy Jam" width={598} height={422} priority />
           <span>ADMIN</span>
         </div>
-        <form action={logout}>
-          <button className="ghost-button" type="submit">Log out ↗</button>
-        </form>
+        <button className="ghost-button" onClick={handleLogout}>Log out ↗</button>
       </header>
 
       <section className="dashboard-heading">
@@ -130,25 +279,82 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           <h1>Dashboard</h1>
           <p>Manage registrations, teams and arrivals in one place.</p>
         </div>
-        <button className="primary-button" onClick={openNewParticipant}>
-          <span>＋</span> Add participant
-        </button>
+        <div className="heading-actions">
+          {/* run() refreshes after its work, so an empty job is just a refetch */}
+          <button
+            className="ghost-button"
+            disabled={pending}
+            onClick={() => run(async () => {})}
+          >
+            {pending ? "⟳ Refreshing…" : "⟳ Refresh"}
+          </button>
+          <button className="primary-button" onClick={openNewParticipant}>
+            <span>＋</span> Add participant
+          </button>
+        </div>
       </section>
 
       <section className="stats-grid" aria-label="Registration summary">
-        <StatCard color="blue" icon="◎" label="Total registrations" value={participants.length} detail="Registered participants" />
-        <StatCard color="yellow" icon="◇" label="Teams" value={teams} detail={`${participants.filter((p) => p.team).length} team members`} />
-        <StatCard color="green" icon="✓" label="Checked in" value={checkedIn} detail={`${participants.length ? Math.round(checkedIn / participants.length * 100) : 0}% attendance`} />
-        <StatCard color="violet" icon="☾" label="Overnight stay" value={staying} detail={`${participants.length - staying} not staying`} />
+        <StatCard color="blue" icon="◎" label="Total registrations" value={items.length} detail="Registered participants" />
+        <StatCard color="yellow" icon="◇" label="Teams" value={teams} detail={`${items.length - solos.length} team members`} />
+        <StatCard color="green" icon="✓" label="Checked in" value={checkedIn} detail={`${items.length ? Math.round(checkedIn / items.length * 100) : 0}% arrived`} />
+        {/* was a duplicate of the overnight panel below — solo count is the
+            number that actually needs acting on */}
+        <StatCard color="violet" icon="⚑" label="Still solo" value={solos.length} detail="Waiting for a team" />
+      </section>
+
+      <section className="night-panel" aria-label="Overnight stay">
+        <div className="panel-title">
+          <div>
+            <p className="section-kicker">SLEEPING ARRANGEMENTS</p>
+            <h2>☾ Overnight stay</h2>
+          </div>
+          {nightFilter ? (
+            <button className="csv-button" onClick={() => setNightFilter(null)}>
+              ✕ Clear filter — showing{" "}
+              {nightFilter === "yes" ? "staying" : "not staying"} only
+            </button>
+          ) : null}
+        </div>
+        <div className="night-grid">
+          <NightColumn
+            title="Staying"
+            tone="yes"
+            people={nightGroups.yes}
+            active={nightFilter === "yes"}
+            onFilter={() => setNightFilter(nightFilter === "yes" ? null : "yes")}
+            onView={() => setViewingNight("yes")}
+          />
+          <NightColumn
+            title="Going home"
+            tone="no"
+            people={nightGroups.no}
+            active={nightFilter === "no"}
+            onFilter={() => setNightFilter(nightFilter === "no" ? null : "no")}
+            onView={() => setViewingNight("no")}
+          />
+        </div>
       </section>
 
       <section className="participant-panel">
         <div className="panel-title">
           <div>
             <p className="section-kicker">PARTICIPANT DIRECTORY</p>
-            <h2>Registrations <span>{participants.length}</span></h2>
+            <h2>
+              {filter === "teams" ? "Teams" : "Registrations"}{" "}
+              <span>
+                {filter === "teams" ? teamGroups.length : visibleParticipants.length}
+              </span>
+            </h2>
           </div>
-          <button className="csv-button" onClick={exportCsv}>↓ Export CSV</button>
+          <div className="heading-actions">
+            {solos.length > 1 ? (
+              <button className="csv-button" onClick={() => setNewTeam([])}>
+                ⚑ New team
+              </button>
+            ) : null}
+            <button className="csv-button" onClick={exportCsv}>↓ Export CSV</button>
+          </div>
         </div>
 
         <div className="toolbar">
@@ -172,73 +378,244 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
               </button>
             ))}
           </div>
+          {/* the teams filter draws its own card per team, so the grid/list
+              switch has nothing to say there */}
+          {filter !== "teams" ? (
+            <div className="filter-tabs view-tabs" aria-label="Layout">
+              <button
+                className={view === "grid" ? "active" : ""}
+                onClick={() => setView("grid")}
+                aria-pressed={view === "grid"}
+              >
+                ▦ grid
+              </button>
+              <button
+                className={view === "list" ? "active" : ""}
+                onClick={() => setView("list")}
+                aria-pressed={view === "list"}
+              >
+                ☰ list
+              </button>
+            </div>
+          ) : null}
         </div>
 
-        <div className="participant-grid">
-          {visibleParticipants.map((participant) => (
-            <article className="participant-card" key={participant.id}>
-              <div className="participant-main">
-                <span className="avatar">{participant.name.charAt(0)}</span>
-                <div>
-                  <h3>{participant.name}</h3>
-                  <p>{participant.email}</p>
-                  <small>{participant.university} · {participant.level}</small>
-                </div>
-              </div>
-              <div className="badges">
-                <span className={participant.team ? "team-badge" : "solo-badge"}>
-                  {participant.team ? `Team: ${participant.team}` : "Solo"}
-                </span>
-                <span className={participant.staying ? "stay-badge" : "muted-badge"}>
-                  {participant.staying ? "☾ Staying" : "Going home"}
-                </span>
-                {/* only worth flagging when they are NOT there for both days */}
-                {participant.attendance && participant.attendance !== "both" ? (
-                  <span className="partial-badge">
-                    {participant.attendance} Aug only
-                  </span>
-                ) : null}
-              </div>
-              {participant.teamMembers.length ? (
-                <p className="team-roster">
-                  With: {participant.teamMembers.join(", ")}
-                </p>
-              ) : null}
-              <div className="card-actions">
-                <button
-                  className={participant.checkedIn ? "checked-button" : ""}
-                  disabled={pending}
-                  onClick={() =>
-                    run(() => setCheckedIn(participant.id, !participant.checkedIn))
-                  }
-                >
-                  {participant.checkedIn ? "✓ Checked in" : "Check in"}
-                </button>
-                <button onClick={() => openEdit(participant)}>Edit</button>
-                <button
-                  className="delete-button"
-                  disabled={pending}
-                  onClick={() => {
-                    if (window.confirm(`Delete ${participant.name}?`)) {
-                      run(() => deleteParticipant(participant.id));
-                    }
-                  }}
-                  aria-label={`Delete ${participant.name}`}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
-          {!visibleParticipants.length && (
+        {!visibleParticipants.length ? (
+          <div className="participant-grid">
             <div className="empty-state">
               <span>?</span>
               <h3>No participant found</h3>
               <p>Try a different search or filter.</p>
             </div>
-          )}
-        </div>
+          </div>
+        ) : filter === "teams" ? (
+          <div className="team-grid">
+            {teamGroups.map((group) => (
+              <TeamCard
+                key={group.name}
+                group={group}
+                pending={pending}
+                onModify={() => setModifying(group)}
+                onToggleCheckIn={toggleCheckIn}
+                onEdit={openEdit}
+                onDelete={setDeleting}
+                onLeave={(member) => run(async () => { await patchParticipant(member.id, { team: null }); })}
+              />
+            ))}
+          </div>
+        ) : view === "list" ? (
+          <ListTable
+            rows={visibleParticipants}
+            pending={pending}
+            onToggleCheckIn={toggleCheckIn}
+            onEdit={openEdit}
+            onDelete={setDeleting}
+          />
+        ) : (
+          <div className="participant-grid">
+            {visibleParticipants.map((participant) => (
+              <ParticipantCard
+                key={participant.id}
+                participant={participant}
+                pending={pending}
+                onToggleCheckIn={() => toggleCheckIn(participant)}
+                onToggleStaying={() => toggleStaying(participant)}
+                onEdit={() => openEdit(participant)}
+                onDelete={() => setDeleting(participant)}
+                onLeaveTeam={() => run(async () => { await patchParticipant(participant.id, { team: null }); })}
+              />
+            ))}
+          </div>
+        )}
       </section>
+
+      {deleting && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setDeleting(null)}>
+          <section
+            className="participant-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button className="modal-close" onClick={() => setDeleting(null)} aria-label="Close">×</button>
+            <p className="section-kicker">DANGER ZONE</p>
+            <h2 id="delete-title">Delete registration?</h2>
+            <p className="modal-note">
+              This permanently removes <strong>{deleting.name}</strong>
+              {deleting.team ? ` from team ${deleting.team}` : ""}. It cannot be
+              undone.
+            </p>
+            <div className="modal-buttons">
+              <button className="ghost-button" onClick={() => setDeleting(null)}>
+                Cancel
+              </button>
+              <button
+                className="danger-button"
+                disabled={pending}
+                onClick={() => {
+                  const id = deleting.id;
+                  setDeleting(null);
+                  run(async () => { await api(`/api/registrations/${id}`, { method: "DELETE" }); });
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {viewingNight && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setViewingNight(null)}>
+          <section
+            className="participant-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="night-list-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button className="modal-close" onClick={() => setViewingNight(null)} aria-label="Close">×</button>
+            <p className="section-kicker">SLEEPING ARRANGEMENTS</p>
+            <h2 id="night-list-title">
+              {viewingNight === "yes" ? "Staying overnight" : "Going home"}{" "}
+              <span className="count-pill">
+                {(viewingNight === "yes" ? nightGroups.yes : nightGroups.no).length}
+              </span>
+            </h2>
+            <ul className="night-list">
+              {(viewingNight === "yes" ? nightGroups.yes : nightGroups.no).map(
+                (person) => (
+                  <li key={person.id}>
+                    <span>
+                      {person.name}
+                      <small>{person.email}</small>
+                    </span>
+                    <em>{person.team ?? "Solo"}</em>
+                  </li>
+                ),
+              )}
+              {!(viewingNight === "yes" ? nightGroups.yes : nightGroups.no)
+                .length && <li className="night-list__empty">No one yet.</li>}
+            </ul>
+          </section>
+        </div>
+      )}
+
+      {modifying && (
+        <ModifyTeamModal
+          group={modifying}
+          solos={solos}
+          pending={pending}
+          onClose={() => setModifying(null)}
+          onRename={(name) =>
+            run(async () => {
+              await api("/api/teams", {
+                method: "PATCH",
+                body: JSON.stringify({ from: modifying.name, to: name }),
+              });
+              setModifying(null);
+            })
+          }
+          onAdd={(memberIds) =>
+            run(async () => {
+              await api("/api/teams", {
+                method: "POST",
+                body: JSON.stringify({ teamName: modifying.name, memberIds }),
+              });
+              setModifying(null);
+            })
+          }
+          onRemove={(id) =>
+            run(async () => {
+              await patchParticipant(id, { team: null });
+              setModifying(null);
+            })
+          }
+        />
+      )}
+
+      {newTeam && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setNewTeam(null)}>
+          <section
+            className="participant-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-team-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button className="modal-close" onClick={() => setNewTeam(null)} aria-label="Close">×</button>
+            <p className="section-kicker">SQUAD BUILDER</p>
+            <h2 id="new-team-title">New team</h2>
+            <form action={handleCreateTeam}>
+              <label>
+                Team name
+                <input name="team" placeholder="Chaos Emeralds" required autoFocus />
+              </label>
+
+              <fieldset className="team-picker">
+                <legend>
+                  Members <small>{newTeam.length}/{TEAM_CAP} picked</small>
+                </legend>
+                {solos.map((solo) => {
+                  const picked = newTeam.includes(solo.id);
+                  return (
+                    <label key={solo.id} className="team-picker__row">
+                      <input
+                        type="checkbox"
+                        checked={picked}
+                        /* stop at four, but never block un-ticking */
+                        disabled={!picked && newTeam.length >= TEAM_CAP}
+                        onChange={() =>
+                          setNewTeam((current) =>
+                            (current ?? []).includes(solo.id)
+                              ? (current ?? []).filter((id) => id !== solo.id)
+                              : [...(current ?? []), solo.id],
+                          )
+                        }
+                      />
+                      <span>
+                        {solo.name}
+                        <small>{solo.university} · {solo.level}</small>
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
+
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={pending || newTeam.length < 2}
+              >
+                {newTeam.length < 2
+                  ? "Pick at least 2 people"
+                  : `Create team of ${newTeam.length}`}
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
 
       {showForm && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowForm(false)}>
@@ -254,11 +631,23 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
             <h2 id="participant-form-title">{editing ? "Edit participant" : "Add participant"}</h2>
             <form action={handleSave}>
               <label>Full name<input name="name" defaultValue={editing?.name} required /></label>
-              <label>Email<input name="email" type="email" defaultValue={editing?.email} required /></label>
+              <div className="form-row">
+                <label>Email<input name="email" type="email" defaultValue={editing?.email} required /></label>
+                <label>Phone<input name="phone" type="tel" defaultValue={editing?.phone ?? ""} /></label>
+              </div>
               <div className="form-row">
                 <label>University<input name="university" defaultValue={editing?.university} required /></label>
                 <label>Level<input name="level" defaultValue={editing?.level} placeholder="L3" required /></label>
               </div>
+              <label>
+                Days attending
+                <select name="attendance" defaultValue={editing?.attendance ?? ""}>
+                  <option value="">Not answered</option>
+                  <option value="both">Both days</option>
+                  <option value="13">13 August only</option>
+                  <option value="14">14 August only</option>
+                </select>
+              </label>
               <label>Team name <small>(leave empty for solo)</small><input name="team" defaultValue={editing?.team ?? ""} /></label>
               <label className="checkbox-label">
                 <input name="staying" type="checkbox" defaultChecked={editing?.staying} />
@@ -272,6 +661,448 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
         </div>
       )}
     </main>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Overnight columns — a head-count that doubles as a filter
+   -------------------------------------------------------------------------- */
+function NightColumn({
+  title,
+  tone,
+  people,
+  active,
+  onFilter,
+  onView,
+}: {
+  title: string;
+  tone: "yes" | "no";
+  people: Participant[];
+  active: boolean;
+  onFilter: () => void;
+  onView: () => void;
+}) {
+  return (
+    <div className={`night-column ${tone} ${active ? "active" : ""}`}>
+      <button
+        className="night-column__head"
+        onClick={onFilter}
+        aria-pressed={active}
+        title="Filter the list below"
+      >
+        <span>{title}</span>
+        <strong>{people.length}</strong>
+      </button>
+      <button
+        className="night-column__view"
+        onClick={onView}
+        disabled={!people.length}
+      >
+        View list
+      </button>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   One participant, as a card
+   -------------------------------------------------------------------------- */
+function ParticipantCard({
+  participant,
+  pending,
+  onToggleCheckIn,
+  onToggleStaying,
+  onEdit,
+  onDelete,
+  onLeaveTeam,
+}: {
+  participant: Participant;
+  pending: boolean;
+  onToggleCheckIn: () => void;
+  onToggleStaying: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onLeaveTeam: () => void;
+}) {
+  return (
+    <article className="participant-card">
+      <div className="participant-main">
+        <span className="avatar">{participant.name.charAt(0)}</span>
+        <div>
+          <h3>{participant.name}</h3>
+          <p>{participant.email}</p>
+          <small>
+            {participant.university} · {participant.level}
+            {participant.phone ? ` · ${participant.phone}` : ""}
+          </small>
+        </div>
+      </div>
+      <div className="badges">
+        <span className={participant.team ? "team-badge" : "solo-badge"}>
+          {participant.team ? `Team: ${participant.team}` : "Solo"}
+        </span>
+        {/* a button, not a label: HR flips these at the door all night. Never
+            disabled — the point of the optimistic patch is that it stays live */}
+        <button
+          className={`badge-toggle ${participant.staying ? "stay-badge" : "muted-badge"}`}
+          onClick={onToggleStaying}
+          title="Click to flip the overnight answer"
+        >
+          {participant.staying ? "☾ Staying" : "Going home"}
+        </button>
+        {/* only worth flagging when they are NOT there for both days */}
+        {participant.attendance && participant.attendance !== "both" ? (
+          <span className="partial-badge">{participant.attendance} Aug only</span>
+        ) : null}
+      </div>
+      {participant.teamMembers.length ? (
+        <p className="team-roster">With: {participant.teamMembers.join(", ")}</p>
+      ) : null}
+
+      {/* Teaming up lives in the teams filter now — Modify on a team card adds
+          solo people, and ⚑ New team builds one from scratch. */}
+      {participant.team ? (
+        <div className="team-up">
+          <button className="team-up__leave" disabled={pending} onClick={onLeaveTeam}>
+            ↩ Leave team
+          </button>
+        </div>
+      ) : null}
+      <div className="card-actions">
+        <button
+          className={participant.checkedIn ? "checked-button" : ""}
+          onClick={onToggleCheckIn}
+        >
+          {participant.checkedIn ? "✓ Checked in" : "Check in"}
+        </button>
+        <button onClick={onEdit}>Edit</button>
+        <button
+          className="delete-button"
+          disabled={pending}
+          onClick={onDelete}
+          aria-label={`Delete ${participant.name}`}
+        >
+          Delete
+        </button>
+      </div>
+    </article>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   One team, with every registered member folded inside it
+   -------------------------------------------------------------------------- */
+function TeamCard({
+  group,
+  pending,
+  onModify,
+  onToggleCheckIn,
+  onEdit,
+  onDelete,
+  onLeave,
+}: {
+  group: TeamGroup;
+  pending: boolean;
+  onModify: () => void;
+  onToggleCheckIn: (member: Participant) => void;
+  onEdit: (member: Participant) => void;
+  onDelete: (member: Participant) => void;
+  onLeave: (member: Participant) => void;
+}) {
+  const present = group.members.filter((member) => member.checkedIn).length;
+  const size = group.members.length;
+  const staying = group.members.filter((member) => member.staying).length;
+
+  return (
+    <article className="team-card">
+      <header className="team-card__head">
+        <div>
+          <p className="section-kicker">TEAM</p>
+          <h3>{group.name}</h3>
+          <div className="badges">
+            <span>◇ {size} member{size === 1 ? "" : "s"}</span>
+            <span className={present === size ? "stay-badge" : ""}>
+              {present}/{size} checked in
+            </span>
+            {staying ? <span className="stay-badge">☾ {staying} staying</span> : null}
+          </div>
+        </div>
+        <button className="csv-button" onClick={onModify}>✎ Modify</button>
+      </header>
+
+      <div className="team-card__members">
+        {group.members.map((member) => (
+          <div className="team-card__member" key={member.id}>
+            <span className="avatar">{member.name.charAt(0)}</span>
+            <div className="team-card__member-body">
+              <h4>{member.name}</h4>
+              <p>{member.email}</p>
+              <small>
+                {member.university} · {member.level}
+                {member.phone ? ` · ${member.phone}` : ""}
+              </small>
+              {member.attendance && member.attendance !== "both" ? (
+                <span className="partial-badge">{member.attendance} Aug only</span>
+              ) : null}
+              <div className="card-actions">
+                <button
+                  className={member.checkedIn ? "checked-button" : ""}
+                  disabled={pending}
+                  onClick={() => onToggleCheckIn(member)}
+                >
+                  {member.checkedIn ? "✓ Checked in" : "Check in"}
+                </button>
+                <button onClick={() => onEdit(member)}>Edit</button>
+                <button disabled={pending} onClick={() => onLeave(member)}>
+                  ↩ Leave
+                </button>
+                <button
+                  className="delete-button"
+                  disabled={pending}
+                  onClick={() => onDelete(member)}
+                  aria-label={`Delete ${member.name}`}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <MissingTeammates group={group} />
+    </article>
+  );
+}
+
+/**
+ * Names typed into the sign-up form by someone who listed teammates, minus
+ * anyone who went on to register themselves — so what is left is the people HR
+ * is still waiting on. Without the subtraction this just repeats the member
+ * list above, since joining a team rewrites team_members to the registered
+ * roster.
+ */
+function MissingTeammates({ group }: { group: TeamGroup }) {
+  const registered = new Set(
+    group.members.map((member) => member.name.trim().toLowerCase()),
+  );
+  const missing = [
+    ...new Set(group.members.flatMap((member) => member.teamMembers)),
+  ].filter((name) => name.trim() && !registered.has(name.trim().toLowerCase()));
+
+  if (!missing.length) return null;
+
+  return (
+    <p className="team-roster">
+      Named but not registered: {missing.join(", ")}
+    </p>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   The table view — the same rows, dense, for scanning at the door
+   -------------------------------------------------------------------------- */
+function ListTable({
+  rows,
+  pending,
+  onToggleCheckIn,
+  onEdit,
+  onDelete,
+}: {
+  rows: Participant[];
+  pending: boolean;
+  onToggleCheckIn: (participant: Participant) => void;
+  onEdit: (participant: Participant) => void;
+  onDelete: (participant: Participant) => void;
+}) {
+  return (
+    <div className="list-wrap">
+      <table className="list-table">
+        <thead>
+          <tr>
+            <th>Participant</th>
+            <th>Contact</th>
+            <th>Team</th>
+            <th>Night</th>
+            <th>Check-in</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((participant) => (
+            <tr key={participant.id}>
+              <td>
+                <div className="list-table__who">
+                  <span className="avatar">{participant.name.charAt(0)}</span>
+                  <div>
+                    <strong>{participant.name}</strong>
+                    <small>
+                      {participant.university} · {participant.level}
+                    </small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span className="list-table__email">{participant.email}</span>
+                <small>{participant.phone ?? "—"}</small>
+              </td>
+              <td>{participant.team ?? "Solo"}</td>
+              <td>{participant.staying ? "☾ Staying" : "—"}</td>
+              <td>
+                <button
+                  className={participant.checkedIn ? "checked-button" : ""}
+                  disabled={pending}
+                  onClick={() => onToggleCheckIn(participant)}
+                >
+                  {participant.checkedIn ? "✓ In" : "Check in"}
+                </button>
+              </td>
+              <td>
+                <div className="card-actions">
+                  <button onClick={() => onEdit(participant)}>Edit</button>
+                  <button
+                    className="delete-button"
+                    disabled={pending}
+                    onClick={() => onDelete(participant)}
+                    aria-label={`Delete ${participant.name}`}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Modify team — rename it, drop people, or pull solo people in
+   -------------------------------------------------------------------------- */
+function ModifyTeamModal({
+  group,
+  solos,
+  pending,
+  onClose,
+  onRename,
+  onAdd,
+  onRemove,
+}: {
+  group: TeamGroup;
+  solos: Participant[];
+  pending: boolean;
+  onClose: () => void;
+  onRename: (name: string) => void;
+  onAdd: (memberIds: string[]) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [name, setName] = useState(group.name);
+  const [picked, setPicked] = useState<string[]>([]);
+
+  /* never read below what a member declared: someone who signed up as a team
+     of 4 has 3 teammates who simply have not registered yet */
+  const declared = Math.max(
+    group.members.length,
+    ...group.members.map((member) => member.teamSize ?? 0),
+  );
+  const spare = Math.max(0, TEAM_CAP - declared);
+
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="participant-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modify-team-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
+        <p className="section-kicker">SQUAD CONTROL</p>
+        <h2 id="modify-team-title">Modify team</h2>
+
+        <label className="stacked-label">
+          Team name
+          <div className="inline-field">
+            <input value={name} onChange={(event) => setName(event.target.value)} />
+            <button
+              className="primary-button"
+              disabled={pending || !name.trim() || name.trim() === group.name}
+              onClick={() => onRename(name)}
+            >
+              Rename
+            </button>
+          </div>
+        </label>
+
+        <fieldset className="team-picker">
+          <legend>
+            Registered <small>{group.members.length}/{TEAM_CAP}</small>
+          </legend>
+          {group.members.map((member) => (
+            <div className="team-picker__row" key={member.id}>
+              <span>
+                {member.name}
+                <small>{member.email}</small>
+              </span>
+              <button
+                className="delete-button"
+                disabled={pending}
+                onClick={() => onRemove(member.id)}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </fieldset>
+
+        <fieldset className="team-picker">
+          <legend>
+            Add solo people <small>{spare} spot{spare === 1 ? "" : "s"} left</small>
+          </legend>
+          {!spare ? (
+            <p className="modal-note">This team is already full.</p>
+          ) : !solos.length ? (
+            <p className="modal-note">Nobody is registered solo right now.</p>
+          ) : (
+            solos.map((solo) => {
+              const chosen = picked.includes(solo.id);
+              return (
+                <label className="team-picker__row" key={solo.id}>
+                  <input
+                    type="checkbox"
+                    checked={chosen}
+                    disabled={!chosen && picked.length >= spare}
+                    onChange={() =>
+                      setPicked((current) =>
+                        current.includes(solo.id)
+                          ? current.filter((id) => id !== solo.id)
+                          : [...current, solo.id],
+                      )
+                    }
+                  />
+                  <span>
+                    {solo.name}
+                    <small>{solo.university} · {solo.level}</small>
+                  </span>
+                </label>
+              );
+            })
+          )}
+        </fieldset>
+
+        <button
+          className="primary-button"
+          disabled={pending || !picked.length}
+          onClick={() => onAdd(picked)}
+        >
+          {picked.length
+            ? `Add ${picked.length} to ${group.name}`
+            : "Pick someone to add"}
+        </button>
+      </section>
+    </div>
   );
 }
 

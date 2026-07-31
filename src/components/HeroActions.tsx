@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import PillButton from "@/components/PillButton";
+import RegistrationModal from "@/components/registration/RegistrationModal";
+import { submitRegistration } from "@/lib/submit-registration";
 import { siteConfig } from "@/config/site";
 
 /**
@@ -40,18 +43,24 @@ function PixelCursor() {
   );
 }
 
-export default function HeroActions() {
+type HeroActionsProps = {
+  /** Evaluated on the server so a visitor cannot reopen sign-ups by changing
+      their system clock; POST /api/register re-checks it anyway. */
+  registrationOpen: boolean;
+  deadline: string;
+};
+
+export default function HeroActions({
+  registrationOpen,
+  deadline,
+}: HeroActionsProps) {
+  const [formOpen, setFormOpen] = useState(false);
+
   return (
     <div className="mt-6 flex w-full max-w-[15rem] flex-col items-center gap-3 sm:mt-8 sm:max-w-xs sm:gap-4">
       <div className="relative w-full">
         <PixelCursor />
-        <PillButton
-          onClick={() => {
-            window.location.hash = siteConfig.registerHref;
-          }}
-        >
-          Register Now
-        </PillButton>
+        <PillButton onClick={() => setFormOpen(true)}>Register Now</PillButton>
       </div>
 
       <PillButton
@@ -61,6 +70,14 @@ export default function HeroActions() {
       >
         Schedule
       </PillButton>
+
+      <RegistrationModal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        registrationOpen={registrationOpen}
+        deadline={deadline}
+        onSubmit={submitRegistration}
+      />
     </div>
   );
 }

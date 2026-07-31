@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAdminAuthenticated } from "../auth";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { LoginForm } from "./login-form";
 
 export default async function AdminLoginPage() {

@@ -36,9 +36,11 @@ browser. Every query runs through a server action.
 
 ## Registration
 
-`/register` writes to the `registrations` table in Supabase. Sign-ups close
-automatically at the deadline in `src/lib/registration-window.ts`, after which
-the page shows a "registrations closed" panel.
+The hero's REGISTER NOW opens the form in a modal over the site; `/register` is
+the same form as a standalone page. Both write to the `registrations` table in
+Supabase. Sign-ups close automatically at the deadline in
+`src/lib/registration-window.ts`, judged by the server clock — after which both
+show a "registrations closed" panel, and the server action refuses the insert.
 
 ## Admin dashboard
 

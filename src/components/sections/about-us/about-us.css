@@ -18,17 +18,31 @@
   position: relative;
   overflow: hidden;
   padding: 74px 20px 0;
-  /* Opens on #c8e6fe — the exact colour the hero's gradient ends on — so the
-     two sky sections read as one continuous sky, then deepens toward the
-     ground the way the mockup does. */
+  /* Sampled off the prototype, row by row. The sky is not a one-way darkening:
+     it opens on #c8e6fe — the exact colour the hero's gradient ends on, so the
+     two sections read as one sky — deepens to #2c52ef at the halfway mark
+     (level with the floating platform), then lifts back to the same #c8e6fe by
+     the grass, which is what puts the ground strip on pale sky. */
   background: linear-gradient(
     180deg,
     #c8e6fe 0%,
-    #8fc9f7 8%,
-    #5aa5ee 26%,
-    #3282dd 50%,
-    #1f66c8 74%,
-    #1a5bb8 100%
+    #badef8 8%,
+    #a4d2f6 15%,
+    #7dbcf2 22%,
+    #5199ef 30%,
+    #4487ef 36%,
+    #346bef 42%,
+    #3060ef 46%,
+    #2c52ef 50%,
+    #2f5cef 54%,
+    #3874ef 60%,
+    #468aef 65%,
+    #579eef 71%,
+    #76b6f2 76%,
+    #8ec6f3 82%,
+    #aed8f7 88%,
+    #bcdff9 94%,
+    #c8e6fe 100%
   );
   font-family: var(--font-sonic-hud), Arial, sans-serif;
 }
@@ -207,9 +221,14 @@
   position: relative;
   z-index: 3;
   width: min(1180px, 74%);
-  margin: 132px auto 0;
-  /* room for the grass and the characters standing on it */
-  padding-bottom: 160px;
+  /* measured from the bottom of the platform rock above */
+  margin: 56px auto 0;
+  /* Room for the ground strip and everything standing on it. The strip is
+     full-bleed, so its contents scale with the width — and it now sits 7.86%
+     lower, so the palm tree tops out at ~20.6% of the width above the section
+     edge and Sonic's head at ~13%. 22vw clears the tree, not just the
+     characters. */
+  padding-bottom: clamp(190px, 22vw, 440px);
 }
 
 /* Dark type on the pale sky here, unlike the white text on the purple board.
@@ -234,8 +253,10 @@
 /* --------------------------------------------------------------------------
    Grass floor closing the section
    -------------------------------------------------------------------------- */
-/* Grass only — no soil. The digits section directly below opens with the
-   checkered dirt, so adding it here would stack two grounds. */
+/* One 1744x501 strip carrying the grass, soil, palm tree, Sonic, the ring row
+   and the flower — it replaces the CSS gradients and the separate sprites that
+   used to be stacked on top of them. Drawn full-bleed, so everything inside it
+   scales with the viewport the way the loose sprites did. */
 .au__ground {
   position: absolute;
   right: 0;
@@ -243,24 +264,19 @@
   left: 0;
   /* above the clouds so they run behind the grass rather than over it */
   z-index: 1;
-  height: 42px;
+  width: 100%;
+  height: auto;
+  /* The strip carries its own soil under the grass, but the digits section
+     below opens with a full-bleed checker in the same two browns — stacking
+     them showed a seam where the two tile scales met. Dropping the strip by
+     the height of its soil (137 of 1744px wide = 7.86%) parks the grass line
+     on the section's bottom edge and lets `overflow: hidden` on .au swallow
+     the soil, so the digits checker is the only dirt on screen. The unit is a
+     percentage margin, which resolves against the container's WIDTH — the
+     same thing the image is sized by, so the two stay locked at any zoom. */
+  margin-bottom: -7.86%;
+  image-rendering: pixelated;
   pointer-events: none;
-  background-image:
-    /* blades breaking the top edge */
-    linear-gradient(90deg,
-      transparent 0 15.6%, #8ae71a 15.6% 34.4%,
-      transparent 34.4% 59.4%, #8ae71a 59.4% 71.9%,
-      transparent 71.9% 87.5%, #8ae71a 87.5% 100%),
-    linear-gradient(#8ae71a 0 0),
-    linear-gradient(#4cae04 0 0),
-    linear-gradient(#1c6d08 0 0);
-  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat;
-  background-size:
-    26px 6px,
-    100% 8px, 100% 26px, 100% 42px;
-  background-position:
-    0 0,
-    0 6px, 0 6px, 0 6px;
 }
 
 @media (max-width: 720px) {
@@ -275,8 +291,9 @@
       0 8px 0 rgba(0, 0, 0, 0.3);
   }
   .au__copy { line-height: 1.9; }
-  .au__what { margin-top: 76px; padding-bottom: 110px; }
-  .au__ground { height: 68px; }
+  /* padding-bottom stays on the base rule — its 230px floor already clears the
+     whole ground strip at this width */
+  .au__what { margin-top: 36px; }
   .au__platform { width: 78%; }
 }
 

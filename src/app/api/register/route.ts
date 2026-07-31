@@ -1,9 +1,15 @@
-"use server";
-
-import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { isRegistrationOpen } from "@/lib/registration-window";
+import { isRegistrationOpen } from "@/config/site";
 import type { RegistrationValues } from "@/components/registration/RegistrationForm";
+
+/**
+ * POST /api/register — the public sign-up endpoint.
+ *
+ * The only route in the app that is not behind the admin cookie, so the guards
+ * live here: the deadline is judged by the server clock, a filled honeypot is
+ * swallowed, and one IP gets five tries per ten minutes.
+ */
 
 /* Best-effort throttle. It lives in memory, so on serverless it is per
    instance rather than global — enough to stop a naive script hammering one
@@ -32,22 +38,31 @@ function rateLimit(ip: string) {
   return true;
 }
 
-export async function submitRegistration(values: RegistrationValues) {
+export async function POST(request: Request) {
   if (!isRegistrationOpen()) {
-    throw new Error("Registrations are closed");
+    return NextResponse.json({ error: "Registrations are closed" }, { status: 403 });
+  }
+
+  let values: RegistrationValues;
+  try {
+    values = (await request.json()) as RegistrationValues;
+  } catch {
+    return NextResponse.json({ error: "Malformed request" }, { status: 400 });
   }
 
   /* a filled honeypot means a bot: accept silently so it does not retry */
-  if (values.website?.trim()) return;
+  if (values.website?.trim()) return NextResponse.json({ ok: true });
 
-  const headerList = await headers();
   const ip =
-    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headerList.get("x-real-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
     "unknown";
 
   if (!rateLimit(ip)) {
-    throw new Error("Too many attempts, wait a few minutes and try again");
+    return NextResponse.json(
+      { error: "Too many attempts, wait a few minutes and try again" },
+      { status: 429 },
+    );
   }
 
   const required = [
@@ -61,10 +76,13 @@ export async function submitRegistration(values: RegistrationValues) {
     values.attendance,
   ];
   if (required.some((value) => !value?.trim())) {
-    throw new Error("Some required fields are missing");
+    return NextResponse.json(
+      { error: "Some required fields are missing" },
+      { status: 400 },
+    );
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
-    throw new Error("That email looks broken");
+    return NextResponse.json({ error: "That email looks broken" }, { status: 400 });
   }
 
   const hasTeam = values.hasTeam === "yes";
@@ -95,9 +113,17 @@ export async function submitRegistration(values: RegistrationValues) {
   if (error) {
     // 23505 = unique violation, i.e. this email already registered
     if (error.code === "23505") {
-      throw new Error("This email is already registered");
+      return NextResponse.json(
+        { error: "This email is already registered" },
+        { status: 409 },
+      );
     }
     console.error("registration insert failed", error);
-    throw new Error("Could not save your registration, try again");
+    return NextResponse.json(
+      { error: "Could not save your registration, try again" },
+      { status: 500 },
+    );
   }
+
+  return NextResponse.json({ ok: true }, { status: 201 });
 }

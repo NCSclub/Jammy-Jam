@@ -8,29 +8,32 @@
   --jj-u: 4px;
 
   /* ------------------------------------------------------------------------
-     Matched to the site mockup: the PARTICIPANTS / MENTORS / DAYS cards are
-     near-black panels inside a thick light-blue pixel border, white body text,
-     gold for the headline numbers, and light-blue CTA buttons. Cyan, magenta
-     and red only ever appear as accent words.
+     Palette only — every shape, size and animation below is untouched.
+     Royal blue off the navbar (#003cb4) and the hero sky, in a grey pixel frame
+     like the About signboard. The near-black slab this replaced was matched to
+     the DIGITS cards, which sit on dark checkered dirt; over the blue sky it
+     read as a hole in the page. Accents are the site's own tokens so the form
+     belongs to the same world as the hero.
      ------------------------------------------------------------------------ */
-  --jj-void: #05050c;        /* outermost sprite outline */
-  --jj-panel-900: #08080f;   /* input wells, bottom of the card */
-  --jj-panel-800: #0e0e1c;
-  --jj-panel-700: #16162e;   /* top of the card */
-  --jj-frame: #8fb9f5;       /* the light-blue card border */
-  --jj-frame-dark: #4a6bbf;
-  --jj-cta: #7fc7f0;         /* REGISTER NOW / SCHEDULE button blue */
-  --jj-cta-dark: #35719c;
-  --jj-slate: #262650;       /* secondary button */
-  --jj-slate-dark: #14142e;
-  --jj-gold: #ffd93b;
-  --jj-gold-700: #b57f00;
-  --jj-cyan: #35e0f2;
-  --jj-magenta: #ff3fa4;
+  --jj-void: #0c2249;        /* outermost sprite outline, and ink on gold */
+  --jj-panel-900: #063a9e;   /* input wells, bottom of the card */
+  --jj-panel-800: #0f4cbb;
+  --jj-panel-700: #1a5fd0;   /* top of the card */
+  --jj-frame: #9aa0b8;       /* the grey pixel frame, as on the About board */
+  --jj-frame-dark: #5f6480;
+  --jj-cta: #3fa9f5;         /* the hero's REGISTER NOW blue */
+  --jj-cta-dark: #1f66c8;
+  --jj-slate: #5f6480;       /* secondary button */
+  --jj-slate-dark: #3c4056;
+  --jj-gold: #ffd23f;
+  --jj-gold-700: #e0a417;
+  --jj-cyan: #57d8ff;
+  --jj-magenta: #ff5ea8;
   --jj-red: #ff4d4d;
   --jj-red-700: #a01d1d;
   --jj-ink: #ffffff;
-  --jj-ink-dim: #8d97bd;
+  /* lifted off the old near-black value — it went muddy on the blue */
+  --jj-ink-dim: #b8cdf0;
 
   color: var(--jj-ink);
   font-family: var(--jj-font-body), ui-monospace, "Courier New", monospace;
@@ -62,8 +65,8 @@
 }
 
 /* --------------------------------------------------------------------------
-   The card: black outline > light-blue border > near-black panel,
-   exactly like the stat cards on the landing page
+   The card: navy outline > grey pixel frame > royal blue panel,
+   the same construction as the About signboard
    -------------------------------------------------------------------------- */
 .jj-frame {
   background: var(--jj-void);
@@ -113,7 +116,7 @@
   inset: -4px;
   background: repeating-linear-gradient(
     115deg,
-    rgba(53, 224, 242, 0.14) 0 6px,
+    rgba(87, 216, 255, 0.14) 0 6px,
     transparent 6px 28px
   );
   animation: jj-dash 1.1s linear infinite;
@@ -252,9 +255,9 @@
   height: 12px;
   background-image: conic-gradient(
     #ffffff 0 25%,
-    #05050c 0 50%,
+    var(--jj-void) 0 50%,
     #ffffff 0 75%,
-    #05050c 0
+    var(--jj-void) 0
   );
   background-size: 12px 12px;
   box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.4);
@@ -328,16 +331,17 @@
   opacity: 1;
 }
 
+/* a step lighter than the well, the same relationship the old palette had */
 .jj-input:hover {
-  background: #101024;
+  background: #0a45b0;
 }
 
 .jj-input:focus {
-  background: #101028;
+  background: #0d4ac0;
   box-shadow:
     inset 0 0 0 3px var(--jj-cyan),
     inset 0 3px 0 3px rgba(0, 0, 0, 0.6),
-    inset 0 0 12px rgba(53, 224, 242, 0.3);
+    inset 0 0 12px rgba(87, 216, 255, 0.3);
 }
 
 .jj-input[aria-invalid="true"] {
@@ -417,7 +421,7 @@ select.jj-input option {
    Squad roster — the sub-card that unfolds when "Do you have a team?" is yes
    -------------------------------------------------------------------------- */
 .jj-squad {
-  background: rgba(143, 185, 245, 0.07);
+  background: rgba(154, 160, 184, 0.1);
   box-shadow: inset 0 0 0 3px var(--jj-frame-dark);
   animation: jj-unfold 0.16s steps(3, end);
 }
@@ -458,7 +462,7 @@ select.jj-input option {
   width: 8px;
   height: 8px;
   background: var(--jj-cyan);
-  box-shadow: 0 0 0 2px rgba(53, 224, 242, 0.25);
+  box-shadow: 0 0 0 2px rgba(87, 216, 255, 0.25);
 }
 
 @keyframes jj-unfold {
