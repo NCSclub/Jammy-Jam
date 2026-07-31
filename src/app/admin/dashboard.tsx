@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useOptimistic, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Participant } from "./types";
@@ -84,6 +84,26 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
   /* the solo people ticked for a brand-new squad; null means the builder is
      closed. Seeded with whoever opened it. */
   const [newTeam, setNewTeam] = useState<string[] | null>(null);
+
+  /**
+   * Leaving the dashboard ends the session — closing the tab, navigating away
+   * or refreshing all require the password again.
+   *
+   * `pagehide` rather than `beforeunload`: it is the only one mobile Safari
+   * fires reliably, and it covers the bfcache case. `sendBeacon` rather than
+   * fetch, because a normal request is cancelled the instant the page goes
+   * away, whereas a beacon is handed to the browser to deliver afterwards.
+   *
+   * Note this does NOT fire on router.refresh() — that is a client-side data
+   * refetch, not a page unload — so check-in, edit and delete are unaffected.
+   */
+  useEffect(() => {
+    function endSession() {
+      navigator.sendBeacon?.("/api/admin/logout");
+    }
+    window.addEventListener("pagehide", endSession);
+    return () => window.removeEventListener("pagehide", endSession);
+  }, []);
 
   /* everything below reads the optimistic list, so a check-in moves the stat
      cards and the overnight counts in the same paint as the badge */

@@ -6,14 +6,26 @@ import { cookies } from "next/headers";
 const COOKIE_NAME = "jammy_admin_session";
 const SESSION_VALUE = "jammy-jam-admin";
 
+/**
+ * Hard ceiling on a session, enforced by the server. The dashboard already ends
+ * the session when it is left, and the cookie dies with the browser — this is
+ * the layer neither of those can provide: a cookie that was copied off the
+ * machine stops working on its own.
+ */
+const MAX_SESSION_MS = 2 * 60 * 60 * 1000;
+
 function getSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) throw new Error("ADMIN_SESSION_SECRET is not configured.");
   return secret;
 }
 
-function sessionToken() {
-  return createHmac("sha256", getSecret()).update(SESSION_VALUE).digest("hex");
+/* The issue time is signed along with the marker, so the timestamp in the
+   cookie cannot be edited to extend a session — changing it breaks the HMAC. */
+function sign(issuedAt: number) {
+  return createHmac("sha256", getSecret())
+    .update(`${SESSION_VALUE}:${issuedAt}`)
+    .digest("hex");
 }
 
 export async function isAdminAuthenticated() {
@@ -21,18 +33,35 @@ export async function isAdminAuthenticated() {
   const value = (await cookies()).get(COOKIE_NAME)?.value;
   if (!value) return false;
 
-  const expected = sessionToken();
-  if (value.length !== expected.length) return false;
+  const [issuedRaw, token] = value.split(".");
+  const issuedAt = Number(issuedRaw);
+  if (!token || !Number.isFinite(issuedAt)) return false;
 
-  return timingSafeEqual(Buffer.from(value), Buffer.from(expected));
+  /* age first, so an expired cookie never even reaches the comparison.
+     A negative age means the timestamp is in the future — clock skew or a
+     tampered value; either way, refuse. */
+  const age = Date.now() - issuedAt;
+  if (age < 0 || age > MAX_SESSION_MS) return false;
+
+  const expected = sign(issuedAt);
+  if (token.length !== expected.length) return false;
+
+  return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
 }
 
 export async function createAdminSession() {
-  (await cookies()).set(COOKIE_NAME, sessionToken(), {
+  /* stamped with the issue time, so every login produces a different cookie
+     value instead of one constant string that would work forever */
+  const issuedAt = Date.now();
+
+  (await cookies()).set(COOKIE_NAME, `${issuedAt}.${sign(issuedAt)}`, {
     httpOnly: true,
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 8,
+    /* No maxAge on purpose: this is a session cookie, so it dies when the
+       browser closes rather than lasting 8 hours. The dashboard also ends the
+       session itself the moment it is left — this is the backstop for a crash
+       or a killed tab where that never runs. */
     /* Root path, not /admin. The browser only sends a cookie to paths under
        its own, so a /admin-scoped cookie never reaches /api/registrations and
        every admin request would come back 401. */
