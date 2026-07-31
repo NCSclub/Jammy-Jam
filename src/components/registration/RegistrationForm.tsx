@@ -94,6 +94,15 @@ function memberCount(teamSize: RegistrationValues["teamSize"]) {
   return teamSize ? Number(teamSize) - 1 : 0;
 }
 
+/**
+ * How many of those names have to be filled in. One fewer than the slots: the
+ * last place can be left open and filled from the solo pool, so a trio that has
+ * only found one teammate can still sign up as a team of 3.
+ */
+function requiredMembers(teamSize: RegistrationValues["teamSize"]) {
+  return Math.max(0, memberCount(teamSize) - 1);
+}
+
 function clearSquadErrors(current: Partial<Record<FieldName, string>>) {
   const next = { ...current };
   delete next.teamSize;
@@ -188,9 +197,9 @@ function validate(values: RegistrationValues) {
     if (!values.teamSize) errors.teamSize = "Pick your team size";
     if (!values.teamName.trim()) errors.teamName = "Name your squad";
 
-    /* every slot the chosen size asks for has to be filled */
+    /* the last slot stays optional — organisers can fill it from the solos */
     const roster = [values.teammate1, values.teammate2, values.teammate3];
-    TEAMMATE_FIELDS.slice(0, memberCount(values.teamSize)).forEach(
+    TEAMMATE_FIELDS.slice(0, requiredMembers(values.teamSize)).forEach(
       (field, index) => {
         if (!roster[index].trim()) errors[field.name] = "Enter this member";
       },
@@ -561,7 +570,8 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                       <p className="jj-squad__note">
                         Pick the total size of your team, yourself included.
                         You are already registered, so only name the other
-                        members below.
+                        members below. The last slot can be left empty — we
+                        will fill it from the solo players.
                       </p>
                       <div className="mt-5 grid gap-5">
                         <Field
@@ -617,12 +627,12 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                           {TEAMMATE_FIELDS.slice(
                             0,
                             memberCount(values.teamSize),
-                          ).map((field) => (
+                          ).map((field, index) => (
                             <Field
                               key={field.name}
                               name={field.name}
                               label={field.label}
-                              required
+                              required={index < requiredMembers(values.teamSize)}
                               error={errors[field.name]}
                             >
                               <input
