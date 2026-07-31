@@ -54,12 +54,19 @@ export function Sponsors() {
 
                 `hidden sm:block` keeps him off phones entirely — below 640px he
                 is the widest thing on screen and crowds the logo. */}
-            <div className="relative flex w-full items-center justify-center">
+            {/* Full-bleed row: `left-1/2 -translate-x-1/2 w-screen` breaks it out
+                of the max-w-3xl column so Sonic can sit near the section's own
+                edge instead of the column's, which on a wide screen is still
+                hundreds of pixels in. The section clips its overflow, so the
+                extra width never reaches the page. The gem stays dead centre
+                because a centred full-width row and a centred column share the
+                same midpoint. */}
+            <div className="relative left-1/2 flex w-screen -translate-x-1/2 items-center justify-center">
                 <img
                     src="/sections/Sponsors/yellow-sonic.png"
                     alt=""
                     aria-hidden="true"
-                    className="absolute left-0 top-1/2 hidden h-auto w-[clamp(72px,17vw,124px)] -translate-y-1/2 sm:block"
+                    className="absolute left-[clamp(6px,4vw,80px)] top-1/2 hidden h-auto w-[clamp(72px,17vw,124px)] -translate-y-1/2 sm:block"
                 />
                 <img
                     src={`${GEMS}/Yellow-Gem.png`}
