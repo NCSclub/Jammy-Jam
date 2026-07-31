@@ -277,8 +277,12 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
       name: String(formData.get("name")),
       email: String(formData.get("email")),
       phone: String(formData.get("phone") ?? ""),
+      discord: String(formData.get("discord") ?? ""),
       university: String(formData.get("university")),
+      studentId: String(formData.get("studentId") ?? ""),
       level: String(formData.get("level")),
+      skills: String(formData.get("skills") ?? ""),
+      expectations: String(formData.get("expectations") ?? ""),
       attendance: String(formData.get("attendance") ?? ""),
       team: String(formData.get("team") || "").trim() || null,
       staying: formData.get("staying") === "on",
@@ -748,15 +752,38 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
             <p className="section-kicker">REGISTRATION DETAILS</p>
             <h2 id="participant-form-title">{editing ? "Edit participant" : "Add participant"}</h2>
             <form action={handleSave}>
+              {/* same fields, same order as the public sign-up form, so what
+                  HR edits here is what the participant filled in */}
               <label>Full name<input name="name" defaultValue={editing?.name} required /></label>
               <div className="form-row">
                 <label>Email<input name="email" type="email" defaultValue={editing?.email} required /></label>
                 <label>Phone<input name="phone" type="tel" defaultValue={editing?.phone ?? ""} /></label>
               </div>
               <div className="form-row">
+                <label>Discord tag<input name="discord" defaultValue={editing?.discord ?? ""} /></label>
+                <label>Student ID<input name="studentId" defaultValue={editing?.studentId ?? ""} /></label>
+              </div>
+              <div className="form-row">
                 <label>University<input name="university" defaultValue={editing?.university} required /></label>
                 <label>Level<input name="level" defaultValue={editing?.level} placeholder="L3" required /></label>
               </div>
+              <label>
+                Skills
+                <input
+                  name="skills"
+                  defaultValue={editing?.skills ?? ""}
+                  placeholder="E.g. Web dev, pixel art, sound design…"
+                />
+              </label>
+              <label>
+                Expectations
+                <textarea
+                  name="expectations"
+                  rows={3}
+                  defaultValue={editing?.expectations ?? ""}
+                  placeholder="What they hope to get out of the jam"
+                />
+              </label>
               <label>
                 Days attending
                 <select name="attendance" defaultValue={editing?.attendance ?? ""}>

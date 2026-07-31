@@ -17,8 +17,12 @@ type Body = {
   name?: string;
   email?: string;
   phone?: string;
+  discord?: string;
   university?: string;
+  studentId?: string;
   level?: string;
+  skills?: string;
+  expectations?: string;
   attendance?: string;
   /** null clears the team, which also resyncs whoever is left behind */
   team?: string | null;
@@ -46,8 +50,13 @@ export async function PATCH(
   if (body.staying !== undefined) update.staying = body.staying;
   if (body.email !== undefined) update.email = body.email.trim().toLowerCase();
   if (body.phone !== undefined) update.phone = body.phone.trim() || null;
+  if (body.discord !== undefined) update.discord = body.discord.trim() || null;
   if (body.university !== undefined) update.university = body.university.trim();
+  if (body.studentId !== undefined) update.student_id = body.studentId.trim() || null;
   if (body.level !== undefined) update.level = body.level;
+  if (body.skills !== undefined) update.skills = body.skills.trim() || null;
+  if (body.expectations !== undefined)
+    update.expectations = body.expectations.trim() || null;
   if (body.attendance !== undefined) update.attendance = body.attendance || null;
 
   if (body.name !== undefined) {

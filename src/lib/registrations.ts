@@ -9,7 +9,7 @@ import type { Participant } from "@/app/admin/types";
  */
 
 export const LIST_COLUMNS =
-  "id, first_name, last_name, email, phone, university, level, team_name, team_size, team_members, attendance, staying, checked_in";
+  "id, first_name, last_name, email, phone, discord, university, student_id, level, skills, expectations, team_name, team_size, team_members, attendance, staying, checked_in";
 
 type Row = Record<string, unknown>;
 
@@ -21,8 +21,12 @@ export function rowToParticipant(row: Row): Participant {
     name: `${(row.first_name as string) ?? ""} ${(row.last_name as string) ?? ""}`.trim(),
     email: row.email as string,
     phone: (row.phone as string | null) ?? null,
+    discord: (row.discord as string | null) ?? null,
     university: row.university as string,
+    studentId: (row.student_id as string | null) ?? null,
     level: row.level as string,
+    skills: (row.skills as string | null) ?? null,
+    expectations: (row.expectations as string | null) ?? null,
     team: (row.team_name as string | null) ?? null,
     /* walk-ins added from the dashboard have no team_size, so fall back to
        counting the listed members plus the registrant themselves */

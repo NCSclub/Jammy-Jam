@@ -3,8 +3,12 @@ export type Participant = {
   name: string;
   email: string;
   phone: string | null;
+  discord: string | null;
   university: string;
+  studentId: string | null;
   level: string;
+  skills: string | null;
+  expectations: string | null;
   team: string | null;
   teamSize: number | null;
   teamMembers: string[];

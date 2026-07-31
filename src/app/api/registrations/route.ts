@@ -46,8 +46,12 @@ export async function POST(request: Request) {
       last_name: rest.join(" "),
       email: String(body.email).trim().toLowerCase(),
       phone: body.phone?.trim() || null,
+      discord: body.discord?.trim() || null,
       university: body.university?.trim() ?? "",
+      student_id: body.studentId?.trim() || null,
       level: body.level ?? "",
+      skills: body.skills?.trim() || null,
+      expectations: body.expectations?.trim() || null,
       /* the column has a check constraint on 'both' | '13' | '14', so an unset
          dropdown has to land as NULL rather than "" */
       attendance: body.attendance || null,

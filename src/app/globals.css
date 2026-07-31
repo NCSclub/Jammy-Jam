@@ -853,8 +853,24 @@ body {
   background: #f7fbff;
   font: inherit;
 }
-.participant-modal input:focus { border-color: #4dbcec; }
+/* the Expectations field is a textarea, so it needs the same skin as the
+   inputs — height auto rather than the fixed 44px, and room to resize */
+.participant-modal textarea {
+  padding: 11px 13px;
+  border: 1px solid #c8daef;
+  border-radius: 2px;
+  outline: none;
+  color: #10244a;
+  background: #f7fbff;
+  font: inherit;
+  resize: vertical;
+}
+
+.participant-modal input:focus,
+.participant-modal textarea:focus { border-color: #4dbcec; }
 .form-row { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+/* the paired rows here hold two equal fields, not a wide one and a narrow one */
+.participant-modal .form-row { grid-template-columns: 1fr 1fr; }
 .participant-modal .checkbox-label {
   display: flex;
   align-items: center;
