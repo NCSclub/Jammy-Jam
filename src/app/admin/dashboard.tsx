@@ -36,7 +36,7 @@ const patchParticipant = (id: string, changes: Record<string, unknown>) =>
     body: JSON.stringify(changes),
   });
 
-type Filter = "all" | "teams" | "solo" | "2" | "3" | "4";
+type Filter = "all" | "teams" | "solo" | "3" | "4";
 type ViewMode = "grid" | "list";
 type NightFilter = "yes" | "no" | null;
 /** "none" is anyone who registered before the question existed. */
@@ -47,7 +47,6 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "all" },
   { value: "teams", label: "teams" },
   { value: "solo", label: "solo" },
-  { value: "2", label: "team of 2" },
   { value: "3", label: "team of 3" },
   { value: "4", label: "team of 4" },
 ];
@@ -727,10 +726,10 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
               <button
                 className="primary-button"
                 type="submit"
-                disabled={pending || newTeam.length < 2}
+                disabled={pending || newTeam.length < 3}
               >
-                {newTeam.length < 2
-                  ? "Pick at least 2 people"
+                {newTeam.length < 3
+                  ? "Pick at least 3 people"
                   : `Create team of ${newTeam.length}`}
               </button>
             </form>

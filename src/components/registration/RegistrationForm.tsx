@@ -35,7 +35,7 @@ export type RegistrationValues = {
   website: string;
   hasTeam: "no" | "yes";
   /* only filled in when hasTeam is "yes" */
-  teamSize: "" | "2" | "3" | "4";
+  teamSize: "" | "3" | "4";
   teamName: string;
   teammate1: string;
   teammate2: string;
@@ -73,9 +73,9 @@ const EMPTY: RegistrationValues = {
   teammate3: "",
 };
 
-/** The registrant counts as one, so a team of N needs N-1 names. */
+/* Squads are 3 or 4 — a pair is not a team here, so a duo registers solo.
+   The registrant counts as one, so a team of N asks for N-1 names. */
 const TEAM_SIZES = [
-  { value: "2", label: "A team of 2 — me + 1 member" },
   { value: "3", label: "A team of 3 — me + 2 members" },
   { value: "4", label: "A team of 4 — me + 3 members" },
 ] as const;
