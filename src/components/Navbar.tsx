@@ -62,7 +62,7 @@ export default function Navbar() {
     <header className="absolute inset-x-0 top-0 z-30 px-4 pt-4 sm:px-6 md:px-8 md:pt-6">
       <nav
         aria-label="Primary"
-        className="mx-auto flex max-w-6xl items-center justify-between rounded-full bg-[#003cb4] px-5 py-3.5 border-b-3 border-[#FCBF09] backdrop-blur-sm sm:px-8 sm:py-4"
+        className="nav-pixel mx-auto flex max-w-6xl items-center justify-between bg-[#003cb4] px-6 py-3.5 sm:px-9 sm:py-4"
       >
         <a
           href="#home"

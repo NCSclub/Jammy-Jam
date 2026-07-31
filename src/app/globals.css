@@ -161,6 +161,56 @@ html {
     inset 0 -5px 0 rgba(4, 60, 100, 0.35);
 }
 
+/* --------------------------------------------------------------------------
+   Navbar — the same pixel vocabulary as the hero buttons and the schedule tabs:
+   staircase ends instead of a smooth pill, and a hard gold under-edge.
+
+   The gold was a `border-bottom` before, which draws a straight line across the
+   bottom and ignores the corners entirely. It is a drop-shadow now, so it
+   follows the stepped silhouette around the ends the way the reference does —
+   box-shadow could not, because clip-path would slice it off.
+   -------------------------------------------------------------------------- */
+.nav-pixel {
+  /* corner staircase on a 6px grid: 24px in on the first row, then 12, then 6 */
+  clip-path: polygon(
+    24px 0, calc(100% - 24px) 0,
+    calc(100% - 24px) 6px, calc(100% - 12px) 6px,
+    calc(100% - 12px) 12px, calc(100% - 6px) 12px,
+    calc(100% - 6px) 18px, 100% 18px,
+    100% calc(100% - 18px), calc(100% - 6px) calc(100% - 18px),
+    calc(100% - 6px) calc(100% - 12px), calc(100% - 12px) calc(100% - 12px),
+    calc(100% - 12px) calc(100% - 6px), calc(100% - 24px) calc(100% - 6px),
+    calc(100% - 24px) 100%, 24px 100%,
+    24px calc(100% - 6px), 12px calc(100% - 6px),
+    12px calc(100% - 12px), 6px calc(100% - 12px),
+    6px calc(100% - 18px), 0 calc(100% - 18px),
+    0 18px, 6px 18px, 6px 12px, 12px 12px, 12px 6px, 24px 6px
+  );
+  filter: drop-shadow(0 6px 0 var(--color-gold-dark));
+}
+
+@media (max-width: 640px) {
+  /* smaller bar, shallower steps, so the staircase still reads as pixels
+     rather than as a chunk bitten out of each end */
+  .nav-pixel {
+    clip-path: polygon(
+      16px 0, calc(100% - 16px) 0,
+      calc(100% - 16px) 4px, calc(100% - 8px) 4px,
+      calc(100% - 8px) 8px, calc(100% - 4px) 8px,
+      calc(100% - 4px) 12px, 100% 12px,
+      100% calc(100% - 12px), calc(100% - 4px) calc(100% - 12px),
+      calc(100% - 4px) calc(100% - 8px), calc(100% - 8px) calc(100% - 8px),
+      calc(100% - 8px) calc(100% - 4px), calc(100% - 16px) calc(100% - 4px),
+      calc(100% - 16px) 100%, 16px 100%,
+      16px calc(100% - 4px), 8px calc(100% - 4px),
+      8px calc(100% - 8px), 4px calc(100% - 8px),
+      4px calc(100% - 12px), 0 calc(100% - 12px),
+      0 12px, 4px 12px, 4px 8px, 8px 8px, 8px 4px, 16px 4px
+    );
+    filter: drop-shadow(0 4px 0 var(--color-gold-dark));
+  }
+}
+
 /* Countdown digit tile */
 .countdown-tile {
   font-family: var(--font-display);
