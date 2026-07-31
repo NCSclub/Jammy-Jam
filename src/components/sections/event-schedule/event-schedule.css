@@ -216,6 +216,16 @@
   border-image: url("/sections/schedule/board.png") 49 37 fill stretch;
 }
 
+/* Standing line above the timetable. No rule between it and the rows; the
+   margin alone does the separating. */
+.es__lead {
+  margin: 2px 10px 34px;
+  color: var(--es-ink);
+  font-size: clamp(15px, 1.7vw, 20px);
+  font-weight: 900;
+  line-height: 1.5;
+}
+
 .es__list {
   display: grid;
   gap: 2px;
@@ -225,8 +235,8 @@
 
 .es__row {
   display: grid;
-  grid-template-columns: 116px 1fr;
-  gap: 22px;
+  grid-template-columns: 124px 1fr;
+  gap: 18px;
   align-items: baseline;
   padding: 15px 10px;
   border-bottom: 2px dotted rgba(26, 10, 4, 0.25);
@@ -234,10 +244,13 @@
 
 .es__row:last-child { border-bottom: 0; }
 
+/* Ranges, not single times — "08:30–19:00" needs roughly twice the room a
+   bare "09:00" did, so the column grew and the type came down a step. */
 .es__time {
   color: #a34d00;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .es__what {
@@ -351,11 +364,12 @@
   .es__cursor { display: none; }
   .es__amy { top: -10px; right: 2%; width: 52px; }
   .es__board { width: 100%; padding: 18px 16px; border-width: 20px 18px; min-height: 300px; }
-  .es__time { font-size: 15px; }
+  .es__time { font-size: 13px; }
+  .es__lead { margin: 0 4px 24px; }
   .es__what { font-size: 17px; }
   .es__note { font-size: 14px; }
   .es__platform { width: 86%; }
-  .es__row { grid-template-columns: 58px 1fr; gap: 10px; }
+  .es__row { grid-template-columns: 92px 1fr; gap: 10px; }
   .es__platform { width: 78%; }
 }
 

@@ -133,6 +133,8 @@ export function EventSchedule() {
           id={`${day.id}-panel`}
           aria-labelledby={`${day.id}-tab`}
         >
+          {day.lead ? <p className="es__lead">{day.lead}</p> : null}
+
           <div className="es__list">
             {day.entries.map((entry) => (
               <div className="es__row" key={`${day.id}-${entry.time}`}>
