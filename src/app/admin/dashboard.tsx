@@ -39,6 +39,8 @@ const patchParticipant = (id: string, changes: Record<string, unknown>) =>
 type Filter = "all" | "teams" | "solo" | "2" | "3" | "4";
 type ViewMode = "grid" | "list";
 type NightFilter = "yes" | "no" | null;
+/** "none" is anyone who registered before the question existed. */
+type DayFilter = "both" | "13" | "14" | "none" | null;
 type TeamGroup = { name: string; members: Participant[] };
 
 const FILTERS: { value: Filter; label: string }[] = [
@@ -52,6 +54,13 @@ const FILTERS: { value: Filter; label: string }[] = [
 
 /** The sign-up form caps a squad at 4, so teams below that have room. */
 const TEAM_CAP = 4;
+
+const DAY_LABEL: Record<string, string> = {
+  both: "both days",
+  "13": "13 August only",
+  "14": "14 August only",
+  none: "no answer",
+};
 
 type Patch = { id: string; changes: Partial<Participant> };
 
@@ -78,7 +87,12 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
   const [showForm, setShowForm] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
   const [nightFilter, setNightFilter] = useState<NightFilter>(null);
-  const [viewingNight, setViewingNight] = useState<NightFilter>(null);
+  const [dayFilter, setDayFilter] = useState<DayFilter>(null);
+  /* one modal serves both head-count panels — it only needs a title and a list */
+  const [listModal, setListModal] = useState<{
+    title: string;
+    people: Participant[];
+  } | null>(null);
   const [deleting, setDeleting] = useState<Participant | null>(null);
   const [modifying, setModifying] = useState<TeamGroup | null>(null);
   /* the solo people ticked for a brand-new squad; null means the builder is
@@ -126,6 +140,24 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
     return { yes, no };
   }, [items]);
 
+  /* Which of the two presential days each person is coming for — the head-count
+     the venue needs per day. `none` catches anyone who signed up before the
+     question existed, or was added by hand without an answer. */
+  const dayGroups = useMemo(() => {
+    const groups: Record<"both" | "13" | "14" | "none", Participant[]> = {
+      both: [],
+      "13": [],
+      "14": [],
+      none: [],
+    };
+    for (const participant of items) {
+      const key = participant.attendance;
+      if (key === "both" || key === "13" || key === "14") groups[key].push(participant);
+      else groups.none.push(participant);
+    }
+    return groups;
+  }, [items]);
+
   const visibleParticipants = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items.filter((participant) => {
@@ -139,6 +171,11 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
       const matchesNight =
         nightFilter === null ||
         (nightFilter === "yes" ? participant.staying : !participant.staying);
+      const matchesDay =
+        dayFilter === null ||
+        (dayFilter === "none"
+          ? !participant.attendance
+          : participant.attendance === dayFilter);
       const matchesSearch =
         !needle ||
         [
@@ -148,9 +185,9 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           participant.team,
           participant.university,
         ].some((value) => value?.toLowerCase().includes(needle));
-      return matchesFilter && matchesNight && matchesSearch;
+      return matchesFilter && matchesNight && matchesDay && matchesSearch;
     });
-  }, [items, query, filter, nightFilter]);
+  }, [items, query, filter, nightFilter, dayFilter]);
 
   /* Every filter that is about squads shows squads: "teams" and each of the
      team-of-N sizes. Only "all" and "solo" list people one by one — for a
@@ -160,16 +197,23 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
   /* one card per team instead of one per person, built from whatever survived
      the search and filters above */
   const teamGroups = useMemo<TeamGroup[]>(() => {
-    const byName = new Map<string, Participant[]>();
+    /* Keyed case-insensitively: registration now stores one canonical spelling
+       per squad, but rows created before that — or typed into the Add
+       participant form by hand — can still differ, and "powerpuff" showing up
+       beside "Powerpuff" as two teams is worse than useless at a check-in
+       desk. The first spelling seen is the one displayed. */
+    const byKey = new Map<string, TeamGroup>();
     for (const participant of visibleParticipants) {
       if (!participant.team) continue;
-      const current = byName.get(participant.team) ?? [];
-      current.push(participant);
-      byName.set(participant.team, current);
+      const key = participant.team.trim().toLowerCase();
+      const group = byKey.get(key) ?? {
+        name: participant.team.trim(),
+        members: [],
+      };
+      group.members.push(participant);
+      byKey.set(key, group);
     }
-    return [...byName.entries()]
-      .map(([name, members]) => ({ name, members }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [visibleParticipants]);
 
   function openNewParticipant() {
@@ -328,6 +372,57 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
         <StatCard color="violet" icon="⚑" label="Still solo" value={solos.length} detail="Waiting for a team" />
       </section>
 
+      <section className="night-panel" aria-label="Presential attendance">
+        <div className="panel-title">
+          <div>
+            <p className="section-kicker">WHO COMES WHICH DAY</p>
+            <h2>◷ Presential attendance</h2>
+          </div>
+          {dayFilter ? (
+            <button className="csv-button" onClick={() => setDayFilter(null)}>
+              ✕ Clear filter — showing {DAY_LABEL[dayFilter]} only
+            </button>
+          ) : null}
+        </div>
+        <div className="night-grid">
+          <CountColumn
+            title="Both days"
+            tone="both"
+            people={dayGroups.both}
+            active={dayFilter === "both"}
+            onFilter={() => setDayFilter(dayFilter === "both" ? null : "both")}
+            onView={() => setListModal({ title: "Coming both days", people: dayGroups.both })}
+          />
+          <CountColumn
+            title="13 Aug only"
+            tone="d13"
+            people={dayGroups["13"]}
+            active={dayFilter === "13"}
+            onFilter={() => setDayFilter(dayFilter === "13" ? null : "13")}
+            onView={() => setListModal({ title: "13 August only", people: dayGroups["13"] })}
+          />
+          <CountColumn
+            title="14 Aug only"
+            tone="d14"
+            people={dayGroups["14"]}
+            active={dayFilter === "14"}
+            onFilter={() => setDayFilter(dayFilter === "14" ? null : "14")}
+            onView={() => setListModal({ title: "14 August only", people: dayGroups["14"] })}
+          />
+          {/* only worth a column when somebody actually never answered */}
+          {dayGroups.none.length ? (
+            <CountColumn
+              title="Not answered"
+              tone="none"
+              people={dayGroups.none}
+              active={dayFilter === "none"}
+              onFilter={() => setDayFilter(dayFilter === "none" ? null : "none")}
+              onView={() => setListModal({ title: "No answer given", people: dayGroups.none })}
+            />
+          ) : null}
+        </div>
+      </section>
+
       <section className="night-panel" aria-label="Overnight stay">
         <div className="panel-title">
           <div>
@@ -342,21 +437,21 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           ) : null}
         </div>
         <div className="night-grid">
-          <NightColumn
+          <CountColumn
             title="Staying"
             tone="yes"
             people={nightGroups.yes}
             active={nightFilter === "yes"}
             onFilter={() => setNightFilter(nightFilter === "yes" ? null : "yes")}
-            onView={() => setViewingNight("yes")}
+            onView={() => setListModal({ title: "Staying overnight", people: nightGroups.yes })}
           />
-          <NightColumn
+          <CountColumn
             title="Going home"
             tone="no"
             people={nightGroups.no}
             active={nightFilter === "no"}
             onFilter={() => setNightFilter(nightFilter === "no" ? null : "no")}
-            onView={() => setViewingNight("no")}
+            onView={() => setListModal({ title: "Going home", people: nightGroups.no })}
           />
         </div>
       </section>
@@ -467,7 +562,6 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
                 onToggleStaying={() => toggleStaying(participant)}
                 onEdit={() => openEdit(participant)}
                 onDelete={() => setDeleting(participant)}
-                onLeaveTeam={() => run(async () => { await patchParticipant(participant.id, { team: null }); })}
               />
             ))}
           </div>
@@ -511,37 +605,36 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
         </div>
       )}
 
-      {viewingNight && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setViewingNight(null)}>
+      {/* one modal for both panels — attendance and overnight only differ by
+          the title and the list they hand it */}
+      {listModal && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setListModal(null)}>
           <section
             className="participant-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="night-list-title"
+            aria-labelledby="people-list-title"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <button className="modal-close" onClick={() => setViewingNight(null)} aria-label="Close">×</button>
-            <p className="section-kicker">SLEEPING ARRANGEMENTS</p>
-            <h2 id="night-list-title">
-              {viewingNight === "yes" ? "Staying overnight" : "Going home"}{" "}
-              <span className="count-pill">
-                {(viewingNight === "yes" ? nightGroups.yes : nightGroups.no).length}
-              </span>
+            <button className="modal-close" onClick={() => setListModal(null)} aria-label="Close">×</button>
+            <p className="section-kicker">HEAD COUNT</p>
+            <h2 id="people-list-title">
+              {listModal.title}{" "}
+              <span className="count-pill">{listModal.people.length}</span>
             </h2>
             <ul className="night-list">
-              {(viewingNight === "yes" ? nightGroups.yes : nightGroups.no).map(
-                (person) => (
-                  <li key={person.id}>
-                    <span>
-                      {person.name}
-                      <small>{person.email}</small>
-                    </span>
-                    <em>{person.team ?? "Solo"}</em>
-                  </li>
-                ),
+              {listModal.people.map((person) => (
+                <li key={person.id}>
+                  <span>
+                    {person.name}
+                    <small>{person.email}</small>
+                  </span>
+                  <em>{person.team ?? "Solo"}</em>
+                </li>
+              ))}
+              {!listModal.people.length && (
+                <li className="night-list__empty">No one yet.</li>
               )}
-              {!(viewingNight === "yes" ? nightGroups.yes : nightGroups.no)
-                .length && <li className="night-list__empty">No one yet.</li>}
             </ul>
           </section>
         </div>
@@ -690,9 +783,10 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
 }
 
 /* --------------------------------------------------------------------------
-   Overnight columns — a head-count that doubles as a filter
+   A head-count that doubles as a filter. Shared by the attendance and the
+   overnight panels — `tone` just picks the colour of the count pill.
    -------------------------------------------------------------------------- */
-function NightColumn({
+function CountColumn({
   title,
   tone,
   people,
@@ -701,7 +795,7 @@ function NightColumn({
   onView,
 }: {
   title: string;
-  tone: "yes" | "no";
+  tone: "yes" | "no" | "both" | "d13" | "d14" | "none";
   people: Participant[];
   active: boolean;
   onFilter: () => void;
@@ -739,7 +833,6 @@ function ParticipantCard({
   onToggleStaying,
   onEdit,
   onDelete,
-  onLeaveTeam,
 }: {
   participant: Participant;
   pending: boolean;
@@ -747,7 +840,6 @@ function ParticipantCard({
   onToggleStaying: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onLeaveTeam: () => void;
 }) {
   return (
     <article className="participant-card">
@@ -784,15 +876,8 @@ function ParticipantCard({
         <p className="team-roster">With: {participant.teamMembers.join(", ")}</p>
       ) : null}
 
-      {/* Teaming up lives in the teams filter now — Modify on a team card adds
-          solo people, and ⚑ New team builds one from scratch. */}
-      {participant.team ? (
-        <div className="team-up">
-          <button className="team-up__leave" disabled={pending} onClick={onLeaveTeam}>
-            ↩ Leave team
-          </button>
-        </div>
-      ) : null}
+      {/* Squad membership is managed where it makes sense: the teams filter.
+          Modify on a team card adds or removes people, ⚑ New team builds one. */}
       <div className="card-actions">
         <button
           className={participant.checkedIn ? "checked-button" : ""}

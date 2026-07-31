@@ -1321,52 +1321,6 @@ body {
   line-height: 1.4;
 }
 
-/* --------------------------------------------------------------------------
-   Teaming up — the control that pairs solo people off, in their own card
-   -------------------------------------------------------------------------- */
-.team-up {
-  margin: 0 0 14px;
-}
-
-.team-up__select,
-.team-up__leave {
-  width: 100%;
-  min-height: 36px;
-  padding: 0 10px;
-  border: 1px dashed #a8c8ea;
-  border-radius: 2px;
-  color: #0871c9;
-  background: #f4faff;
-  font-family: var(--font-sonic-hud), Arial, sans-serif;
-  font-size: 11px;
-  font-weight: 900;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.team-up__select:hover,
-.team-up__leave:hover {
-  border-style: solid;
-  background: #e9f6ff;
-}
-
-.team-up__select:disabled,
-.team-up__leave:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* leaving is a teardown, so it reads in the same red as Delete */
-.team-up__leave {
-  border-color: #f0c9d2;
-  color: #b2445c;
-  background: #fff6f8;
-}
-
-.team-up__leave:hover {
-  background: #ffeef2;
-}
-
 /* the checkbox list inside the squad builder */
 .team-picker {
   margin: 0;
@@ -1503,6 +1457,13 @@ body {
 
 .night-column.yes .night-column__head strong { background: #16855a; }
 .night-column.no .night-column__head strong { background: #8a99ad; }
+
+/* attendance: full run in Sonic blue, the two single days in the ring golds,
+   and anyone who never answered in the same muted grey as "going home" */
+.night-column.both .night-column__head strong { background: #0e50c0; }
+.night-column.d13 .night-column__head strong { background: #c98f12; }
+.night-column.d14 .night-column__head strong { background: #b3261e; }
+.night-column.none .night-column__head strong { background: #8a99ad; }
 
 .night-column__view {
   width: 100%;
