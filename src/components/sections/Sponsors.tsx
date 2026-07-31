@@ -46,20 +46,20 @@ export function Sponsors() {
                 Proudly sponsored by our host institution:
             </p>
 
-            {/* Sonic carrying the emerald — decoration, so phones drop it
-                entirely: below 640px it is the widest thing in the column and
-                crowds the logo. `hidden sm:flex` rather than a CSS media query
-                so it never renders at all on a phone.
+            {/* The yellow emerald sits centred with the rest of the set; Sonic
+                flies in from the far left, level with it. He is absolutely
+                positioned inside this row rather than placed in the section,
+                so his vertical alignment follows the gem automatically instead
+                of depending on a hand-tuned offset.
 
-                The two of them are a flex pair because they used to be a
-                centred-absolute gem sitting on top of an in-flow Sonic, which
-                overlapped him at every width. */}
-            <div className="hidden items-center justify-center gap-[clamp(2px,1.5vw,14px)] sm:flex">
+                `hidden sm:block` keeps him off phones entirely — below 640px he
+                is the widest thing on screen and crowds the logo. */}
+            <div className="relative flex w-full items-center justify-center">
                 <img
                     src="/sections/Sponsors/yellow-sonic.png"
                     alt=""
                     aria-hidden="true"
-                    className="h-auto w-[clamp(72px,17vw,124px)]"
+                    className="absolute left-0 top-1/2 hidden h-auto w-[clamp(72px,17vw,124px)] -translate-y-1/2 sm:block"
                 />
                 <img
                     src={`${GEMS}/Yellow-Gem.png`}
