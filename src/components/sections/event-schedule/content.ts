@@ -15,7 +15,7 @@ export const SCHEDULE: ScheduleDay[] = [
     tab: "Day 1",
     lead: "Jam starts, build all 5 days online.",
     entries: [
-      { time: "11:00", title: "Theme reveal" },
+      { time: "11:00", title: "Theme reveal", note: "5 days of online work" },
     ],
   },
   {
