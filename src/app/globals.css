@@ -186,9 +186,10 @@ html {
     6px calc(100% - 18px), 0 calc(100% - 18px),
     0 18px, 6px 18px, 6px 12px, 12px 12px, 12px 6px, 24px 6px
   );
-  /* sampled off the reference — the light gold, not the deep one */
-  filter: drop-shadow(0 6px 0 #ffb24a);
 }
+
+/* the shadow that draws the gold edge — on the wrapper, see Navbar.tsx */
+.nav-pixel-edge { filter: drop-shadow(0 6px 0 #ffb24a); }
 
 @media (max-width: 640px) {
   /* smaller bar, shallower steps, so the staircase still reads as pixels
@@ -208,8 +209,8 @@ html {
       4px calc(100% - 12px), 0 calc(100% - 12px),
       0 12px, 4px 12px, 4px 8px, 8px 8px, 8px 4px, 16px 4px
     );
-    filter: drop-shadow(0 4px 0 #ffb24a);
   }
+  .nav-pixel-edge { filter: drop-shadow(0 4px 0 #ffb24a); }
 }
 
 /* Countdown digit tile */

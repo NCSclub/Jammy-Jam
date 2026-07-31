@@ -60,9 +60,15 @@ export default function Navbar() {
 
   return (
     <header className="absolute inset-x-0 top-0 z-30 px-4 pt-4 sm:px-6 md:px-8 md:pt-6">
+      {/* The gold edge lives on this wrapper, not on the bar itself: clip-path
+          clips an element after its own filter has been applied, so a
+          drop-shadow on the clipped bar gets sliced off by the very shape it is
+          supposed to trace. On a parent with no background of its own, the
+          shadow follows the bar's stepped silhouette instead. */}
+      <div className="nav-pixel-edge mx-auto max-w-6xl">
       <nav
         aria-label="Primary"
-        className="nav-pixel mx-auto flex max-w-6xl items-center justify-between bg-[#003cb4] px-6 py-3.5 sm:px-9 sm:py-4"
+        className="nav-pixel flex w-full items-center justify-between bg-[#003cb4] px-6 py-3.5 sm:px-9 sm:py-4"
       >
         <a
           href="#home"
@@ -112,6 +118,7 @@ export default function Navbar() {
           />
         </button>
       </nav>
+      </div>
 
       {/* Mobile menu panel */}
       <AnimatePresence>
