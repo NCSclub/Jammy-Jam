@@ -132,6 +132,11 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
     });
   }, [items, query, filter, nightFilter]);
 
+  /* Every filter that is about squads shows squads: "teams" and each of the
+     team-of-N sizes. Only "all" and "solo" list people one by one — for a
+     team of 3 you want the squad, not its members scattered across the grid. */
+  const teamView = filter !== "all" && filter !== "solo";
+
   /* one card per team instead of one per person, built from whatever survived
      the search and filters above */
   const teamGroups = useMemo<TeamGroup[]>(() => {
@@ -341,9 +346,9 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           <div>
             <p className="section-kicker">PARTICIPANT DIRECTORY</p>
             <h2>
-              {filter === "teams" ? "Teams" : "Registrations"}{" "}
+              {teamView ? "Teams" : "Registrations"}{" "}
               <span>
-                {filter === "teams" ? teamGroups.length : visibleParticipants.length}
+                {teamView ? teamGroups.length : visibleParticipants.length}
               </span>
             </h2>
           </div>
@@ -380,7 +385,7 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           </div>
           {/* the teams filter draws its own card per team, so the grid/list
               switch has nothing to say there */}
-          {filter !== "teams" ? (
+          {!teamView ? (
             <div className="filter-tabs view-tabs" aria-label="Layout">
               <button
                 className={view === "grid" ? "active" : ""}
@@ -404,11 +409,11 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           <div className="participant-grid">
             <div className="empty-state">
               <span>?</span>
-              <h3>No participant found</h3>
+              <h3>{teamView ? "No team found" : "No participant found"}</h3>
               <p>Try a different search or filter.</p>
             </div>
           </div>
-        ) : filter === "teams" ? (
+        ) : teamView ? (
           <div className="team-grid">
             {teamGroups.map((group) => (
               <TeamCard
