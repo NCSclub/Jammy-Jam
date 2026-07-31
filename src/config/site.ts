@@ -18,11 +18,12 @@ export const siteConfig = {
     },
     registerHref: "#register",
     scheduleHref: "#schedule",
+    /* Every href here must match a section id on the page:
+       #home (hero), #about, #schedule, #contact (the footer). */
     navLinks: [
         { label: "Home", href: "#home" },
         { label: "About", href: "#about" },
         { label: "Schedule", href: "#schedule" },
-        { label: "Rules", href: "#rules" },
         { label: "Contact", href: "#contact" },
     ],
 } as const;

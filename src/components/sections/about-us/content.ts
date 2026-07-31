@@ -42,7 +42,7 @@ export const ABOUT_BOARD: Piece[] = [
 /* What-is lines:
    JAMMY JAM is a 7-DAY (5 days ONLINE and 2
    PRESENTIAL) game jam organized by Numidia Computer
-   Science (NCS) that brings together game developers,
+   Society (NCS) that brings together game developers,
    artists, designers, and enthusiasts to create original
    games around a surprise theme. Through collaboration,
    creativity, and mentorship, participants transform
@@ -59,7 +59,7 @@ export const WHAT_IS: Piece[] = [
   { text: " and 2", breakAfter: true },
   { text: "presential", tone: "red" },
   { text: ") game jam organized by Numidia Computer", breakAfter: true },
-  { text: "Science (" },
+  { text: "Society (" },
   { text: "NCS", tone: "red" },
   { text: ") that brings together game developers,", breakAfter: true },
   { text: "artists, designers, and enthusiasts to create original", breakAfter: true },

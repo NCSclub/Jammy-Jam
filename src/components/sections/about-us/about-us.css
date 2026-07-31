@@ -185,23 +185,19 @@
   animation: au-hover 3s ease-in-out infinite;
 }
 
+/* Static, upright rings. No spin — the scaleX animation was what squashed them
+   into ovals — and the sprite's pale interior has been cleared to transparent. */
 .au__ring {
   position: absolute;
   z-index: 2;
   height: auto;
   image-rendering: pixelated;
   pointer-events: none;
-  animation: au-spin 4.2s steps(4, end) infinite;
 }
 
 @keyframes au-hover {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
-}
-
-@keyframes au-spin {
-  0%, 100% { transform: scaleX(1); }
-  50% { transform: scaleX(0.25); }
 }
 
 /* --------------------------------------------------------------------------

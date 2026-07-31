@@ -58,7 +58,7 @@ export function EventSchedule() {
   const day = SCHEDULE.find((item) => item.id === active) ?? SCHEDULE[0];
 
   return (
-    <section className="es" aria-labelledby={HEADING_ID}>
+    <section id="schedule" className="es" aria-labelledby={HEADING_ID}>
       <div className="es__ceiling" aria-hidden="true">
         {CEILING.map((piece, index) => (
           <img key={index} src={`${ART}/${piece}.png`} alt="" />

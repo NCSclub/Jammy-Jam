@@ -29,11 +29,12 @@ const CLOUDS = [
   },
 ];
 
-/* Rings drifting in the sky, spaced as in the mockup */
+/* Rings in the sky. `fontSize` drives the ring's thickness, since the torus is
+   built from em-based inset shadows. */
 const RINGS = [
-  { style: { right: "17%", top: "6%", width: "clamp(30px, 2.9vw, 52px)" }, delay: "0s" },
-  { style: { right: "19%", top: "37%", width: "clamp(28px, 2.6vw, 46px)" }, delay: "0.5s" },
-  { style: { left: "3%", top: "46%", width: "clamp(30px, 2.8vw, 50px)" }, delay: "1s" },
+  { right: "17%", top: "6%", size: "clamp(36px, 3.4vw, 62px)" },
+  { right: "19%", top: "37%", size: "clamp(32px, 3vw, 54px)" },
+  { left: "3%", top: "46%", size: "clamp(34px, 3.2vw, 58px)" },
 ];
 
 function Copy({ pieces }: { pieces: Piece[] }) {
@@ -53,7 +54,7 @@ function Copy({ pieces }: { pieces: Piece[] }) {
 
 export function AboutUs() {
   return (
-    <section className="au" aria-labelledby={HEADING_ID}>
+    <section id="about" className="au" aria-labelledby={HEADING_ID}>
       {CLOUDS.map((cloud, index) => (
         <img
           key={index}
@@ -72,7 +73,12 @@ export function AboutUs() {
           src={`${ART}/ring.png`}
           alt=""
           aria-hidden="true"
-          style={{ ...ring.style, animationDelay: ring.delay }}
+          style={{
+            left: ring.left,
+            right: ring.right,
+            top: ring.top,
+            width: ring.size,
+          }}
         />
       ))}
 
@@ -142,8 +148,7 @@ export function AboutUs() {
         style={{ right: "16%", bottom: "34px", width: "8%" }}
       />
 
-      {/* the row of rings between them — sized and spaced off the prototype,
-          where each ring is ~3.4% of the viewport with ~8% between centres */}
+      {/* the row of rings along the grass */}
       {[0, 1, 2, 3].map((index) => (
         <img
           key={`floor-ring-${index}`}
@@ -152,10 +157,9 @@ export function AboutUs() {
           alt=""
           aria-hidden="true"
           style={{
-            left: `${30 + index * 8.5}%`,
+            left: `${31 + index * 7.5}%`,
             bottom: "52px",
-            width: "clamp(42px, 4.4vw, 82px)",
-            animationDelay: `${index * 0.2}s`,
+            width: "clamp(40px, 4vw, 74px)",
           }}
         />
       ))}

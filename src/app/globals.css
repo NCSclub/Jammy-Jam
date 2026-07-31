@@ -93,30 +93,72 @@ html {
   letter-spacing: 0.03em;
 }
 
-/* Chunky pixel-game button shape: capsule with a hard drop shadow and inset highlight */
+/* Chunky pixel-game button: the corners are a staircase stepped on a 4px grid
+   instead of a smooth radius, so they read as pixel art at any zoom. The shape
+   comes from clip-path, which would slice off a border/box-shadow — so the
+   element itself is the black outline layer and ::before paints the blue face
+   inset by one outline width, wearing the same stepped shape. */
 .btn-pixel {
+  --btn-outline: 4px; /* black outline thickness */
+  --btn-drop: 6px; /* hard shadow offset, collapses when pressed */
+  /* same stepped corner as the schedule day tabs: 8px in, chamfered on a 4px
+     grid, so both sets of buttons share one pixel vocabulary */
+  --btn-shape: polygon(
+    0 8px, 4px 8px, 4px 4px, 8px 4px, 8px 0,
+    calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px,
+    calc(100% - 4px) 8px, 100% 8px,
+    100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px),
+    calc(100% - 8px) 100%,
+    8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px),
+    4px calc(100% - 8px), 0 calc(100% - 8px)
+  );
+  position: relative;
+  isolation: isolate;
   font-family: var(--font-display);
-  background: var(--color-blue-light);
-  border-color: #000;
   color: #000;
-  box-shadow:
-    inset 0 3px 0 var(--color-button-highlight),
-    inset 0 -3px 0 #111111;
+  background: #000;
+  clip-path: var(--btn-shape);
+  /* drop-shadow, not box-shadow: clip-path would cut a box-shadow off */
+  filter: drop-shadow(0 var(--btn-drop) 0 #111111);
   transition:
-    transform 120ms ease,
-    box-shadow 120ms ease,
-    filter 120ms ease;
+    transform 0.08s steps(2, end),
+    filter 0.08s steps(2, end);
+}
+
+/* negative z-index keeps the face above the black backing but under the label.
+   Sprite bevel matches the schedule tabs: lit along the top, shaded beneath. */
+.btn-pixel::before {
+  content: "";
+  position: absolute;
+  inset: var(--btn-outline);
+  z-index: -1;
+  background: var(--color-blue-light);
+  clip-path: var(--btn-shape);
+  box-shadow:
+    inset 0 4px 0 var(--color-button-highlight),
+    inset 0 -5px 0 rgba(4, 60, 100, 0.35);
 }
 
 .btn-pixel:hover {
-  filter: brightness(1.05);
+  filter: drop-shadow(0 var(--btn-drop) 0 #111111) brightness(1.12);
 }
 
 .btn-pixel:active {
-  transform: translateY(1px);
+  transform: translateY(5px);
+  filter: drop-shadow(0 1px 0 #111111);
+}
+
+/* clip-path would clip an outline ring away, so focus reads as an inset ring */
+.btn-pixel:focus-visible {
+  outline: none;
+}
+
+.btn-pixel:focus-visible::before {
   box-shadow:
-    inset 0 2px 0 var(--color-button-highlight),
-    inset 0 -2px 0 #111111;
+    inset 0 0 0 4px var(--color-gold),
+    inset 0 4px 0 var(--color-button-highlight),
+    inset 0 -5px 0 rgba(4, 60, 100, 0.35);
 }
 
 /* Countdown digit tile */
