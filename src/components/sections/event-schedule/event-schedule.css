@@ -261,12 +261,15 @@
   line-height: 1.25;
 }
 
+/* the sub-line under an entry — sits clear of the title rather than tucked
+   under it, and big enough to read as information instead of a footnote */
 .es__note {
   display: block;
-  margin-top: 6px;
+  margin-top: 14px;
   color: #6b4a1e;
-  font-size: 17px;
+  font-size: clamp(17px, 1.9vw, 23px);
   font-weight: 600;
+  line-height: 1.35;
 }
 
 /* --------------------------------------------------------------------------
@@ -367,7 +370,7 @@
   .es__time { font-size: 13px; }
   .es__lead { margin: 0 4px 24px; }
   .es__what { font-size: 17px; }
-  .es__note { font-size: 14px; }
+  .es__note { margin-top: 10px; font-size: 16px; }
   .es__platform { width: 86%; }
   .es__row { grid-template-columns: 92px 1fr; gap: 10px; }
   .es__platform { width: 78%; }
