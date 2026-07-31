@@ -97,7 +97,7 @@ export default function Navbar() {
         >
           <motion.span
             className="block h-0.5 w-6 rounded bg-white"
-            animate={isOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+            animate={isOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
           />
           <motion.span
@@ -107,7 +107,7 @@ export default function Navbar() {
           />
           <motion.span
             className="block h-0.5 w-6 rounded bg-white"
-            animate={isOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
+            animate={isOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
           />
         </button>
