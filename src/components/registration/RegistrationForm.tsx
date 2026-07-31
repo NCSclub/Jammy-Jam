@@ -35,7 +35,7 @@ export type RegistrationValues = {
   website: string;
   hasTeam: "no" | "yes";
   /* only filled in when hasTeam is "yes" */
-  teamSize: "" | "3" | "4";
+  teamSize: "" | "2" | "3" | "4";
   teamName: string;
   teammate1: string;
   teammate2: string;
@@ -73,9 +73,9 @@ const EMPTY: RegistrationValues = {
   teammate3: "",
 };
 
-/* Squads are 3 or 4 — a pair is not a team here, so a duo registers solo.
-   The registrant counts as one, so a team of N asks for N-1 names. */
+/* The registrant counts as one, so a team of N asks for N-1 names. */
 const TEAM_SIZES = [
+  { value: "2", label: "A team of 2 — me + 1 member" },
   { value: "3", label: "A team of 3 — me + 2 members" },
   { value: "4", label: "A team of 4 — me + 3 members" },
 ] as const;
@@ -95,11 +95,15 @@ function memberCount(teamSize: RegistrationValues["teamSize"]) {
 }
 
 /**
- * How many of those names have to be filled in. One fewer than the slots: the
- * last place can be left open and filled from the solo pool, so a trio that has
- * only found one teammate can still sign up as a team of 3.
+ * How many of those names have to be filled in. One fewer than the slots, so a
+ * trio that has only found one teammate can still sign up as a team of 3 and
+ * have the open place filled from the solo pool.
+ *
+ * A pair is the exception: dropping its only name would leave a "team" with
+ * nobody in it but the registrant, which is a solo entry wearing a team name.
  */
 function requiredMembers(teamSize: RegistrationValues["teamSize"]) {
+  if (teamSize === "2") return 1;
   return Math.max(0, memberCount(teamSize) - 1);
 }
 
