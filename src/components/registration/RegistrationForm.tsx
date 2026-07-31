@@ -516,6 +516,10 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
                         ))}
                       </select>
                     </div>
+                    <p className="jj-field-note">
+                      At least one member of your team has to be there in
+                      person. Teams with nobody on site are excluded.
+                    </p>
                   </Field>
 
                   <Field

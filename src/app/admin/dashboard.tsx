@@ -543,7 +543,6 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
                 onToggleCheckIn={toggleCheckIn}
                 onEdit={openEdit}
                 onDelete={setDeleting}
-                onLeave={(member) => run(async () => { await patchParticipant(member.id, { team: null }); })}
               />
             ))}
           </div>
@@ -936,7 +935,6 @@ function TeamCard({
   onToggleCheckIn,
   onEdit,
   onDelete,
-  onLeave,
 }: {
   group: TeamGroup;
   pending: boolean;
@@ -944,7 +942,6 @@ function TeamCard({
   onToggleCheckIn: (member: Participant) => void;
   onEdit: (member: Participant) => void;
   onDelete: (member: Participant) => void;
-  onLeave: (member: Participant) => void;
 }) {
   const registered = group.members.length;
   const present = group.members.filter((member) => member.checkedIn).length;
@@ -1015,9 +1012,6 @@ function TeamCard({
                   {member.checkedIn ? "✓ Checked in" : "Check in"}
                 </button>
                 <button onClick={() => onEdit(member)}>Edit</button>
-                <button disabled={pending} onClick={() => onLeave(member)}>
-                  ↩ Leave
-                </button>
                 <button
                   className="delete-button"
                   disabled={pending}

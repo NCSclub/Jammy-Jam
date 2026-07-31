@@ -456,6 +456,19 @@ select.jj-input option {
   color: var(--jj-ink-dim);
 }
 
+/* A rule attached to a field rather than a hint about filling it in — the gold
+   edge marks it as something that costs you the jam if you ignore it. */
+.jj-field-note {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--jj-gold);
+  background: rgba(255, 210, 63, 0.1);
+  color: var(--jj-ink);
+  font-family: var(--jj-font-body), ui-monospace, monospace;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
 .jj-squad__title::before {
   content: "";
   flex: none;
