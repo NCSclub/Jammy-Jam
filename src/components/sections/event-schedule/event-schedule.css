@@ -226,6 +226,17 @@
   line-height: 1.5;
 }
 
+/* Its counterpart below: centred across the whole board rather than tucked in
+   the entry column, and set larger — it speaks for the week, not for one row. */
+.es__tail {
+  margin: 60px 10px 0;
+  color: var(--es-ink);
+  font-size: clamp(20px, 2.7vw, 32px);
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .es__list {
   display: grid;
   gap: 2px;
@@ -369,6 +380,7 @@
   .es__board { width: 100%; padding: 18px 16px; border-width: 20px 18px; min-height: 300px; }
   .es__time { font-size: 13px; }
   .es__lead { margin: 0 4px 24px; }
+  .es__tail { margin-top: 40px; }
   .es__what { font-size: 17px; }
   .es__note { margin-top: 10px; font-size: 16px; }
   .es__platform { width: 86%; }

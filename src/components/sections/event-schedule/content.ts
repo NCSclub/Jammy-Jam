@@ -1,9 +1,11 @@
 export type ScheduleDay = {
   id: string;
   tab: string;
-  /** Optional line above the timetable, for a day that needs context more than
-      it needs rows: the online week is one reveal, then five days of work. */
+  /** Optional lines around the timetable, for a day that needs context more
+      than it needs rows: the online week is one reveal, then five days of work.
+      `lead` sits above the entries, `tail` centred below them. */
   lead?: string;
+  tail?: string;
   entries: { time: string; title: string; note?: string }[];
 };
 
@@ -14,8 +16,9 @@ export const SCHEDULE: ScheduleDay[] = [
     id: "day-1",
     tab: "Day 1",
     lead: "Jam starts, build all 5 days online.",
+    tail: "5 days of online work",
     entries: [
-      { time: "11:00", title: "Theme reveal", note: "5 days of online work" },
+      { time: "11:00", title: "Theme reveal" },
     ],
   },
   {

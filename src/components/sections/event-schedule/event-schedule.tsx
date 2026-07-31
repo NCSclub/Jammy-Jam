@@ -148,6 +148,8 @@ export function EventSchedule() {
               </div>
             ))}
           </div>
+
+          {day.tail ? <p className="es__tail">{day.tail}</p> : null}
         </div>
 
         <img
