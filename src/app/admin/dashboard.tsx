@@ -55,6 +55,63 @@ const FILTERS: { value: Filter; label: string }[] = [
 /** The sign-up form caps a squad at 4, so teams below that have room. */
 const TEAM_CAP = 4;
 
+/* Two people type the same teammate three different ways: "TOUAA Mohamed",
+   "Mohamed Touaa", "Mohamed TOUAA". Reduce a name to a signature — accents
+   stripped, punctuation gone, words sorted and welded together — so word order,
+   case, and a split particle ("Abd Erraouf" vs "Abderraouf") all collapse to the
+   same string. */
+function nameSignature(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .sort()
+    .join("");
+}
+
+/** Damerau–Levenshtein, so a swapped pair ("Abdrerraouf") costs one, not two. */
+function editDistance(a: string, b: string) {
+  const rows: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+  );
+
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      rows[i][j] = Math.min(
+        rows[i - 1][j] + 1,
+        rows[i][j - 1] + 1,
+        rows[i - 1][j - 1] + cost,
+      );
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        rows[i][j] = Math.min(rows[i][j], rows[i - 2][j - 2] + 1);
+      }
+    }
+  }
+
+  return rows[a.length][b.length];
+}
+
+/** Same human? Signatures must match, give or take a typo per 12 characters —
+    a long triple-barrelled name gets some slack, a short one stays strict so two
+    real people never merge. */
+function sameName(a: string, b: string) {
+  const left = nameSignature(a);
+  const right = nameSignature(b);
+  if (!left || !right) return false;
+  if (left === right) return true;
+
+  /* one slip from ten characters up ("Sara"/"Sarah"), a second only once the
+     name is long enough that two people could not collide by accident */
+  const length = Math.min(left.length, right.length);
+  const budget = length < 10 ? 0 : Math.min(2, Math.max(1, Math.floor(length / 12)));
+  return budget > 0 && editDistance(left, right) <= budget;
+}
+
 const DAY_LABEL: Record<string, string> = {
   both: "both days",
   "13": "13 August only",
@@ -949,18 +1006,19 @@ function TeamCard({
 
   /* Names the members typed on the form, minus anyone who has since registered
      — so what is left is who the squad is still waiting on. A person drops off
-     this list the moment their own sign-up lands. */
-  const registeredNames = new Set(
-    group.members.map((member) => member.name.trim().toLowerCase()),
-  );
-  const missing = [
-    ...new Set(
-      group.members
-        .flatMap((member) => member.teamMembers)
-        .map((name) => name.trim())
-        .filter(Boolean),
-    ),
-  ].filter((name) => !registeredNames.has(name.toLowerCase()));
+     this list the moment their own sign-up lands. Every comparison goes through
+     sameName, because four teammates spell each other's names four ways and the
+     same person must not show up twice, nor once after registering. */
+  const missing = group.members
+    .flatMap((member) => member.teamMembers)
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .reduce<string[]>((names, name) => {
+      const known =
+        group.members.some((member) => sameName(member.name, name)) ||
+        names.some((kept) => sameName(kept, name));
+      return known ? names : [...names, name];
+    }, []);
 
   /* How big the squad actually is: what they declared on the form, but never
      less than the people who have registered plus the ones still named. */

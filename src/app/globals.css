@@ -241,7 +241,11 @@ html {
 html,
 body {
   max-width: 100%;
+  /* `clip` trims the overflow without turning these into scroll containers —
+     `hidden` does, and on iOS that is what leaves a drag stuck mid-flick. The
+     hidden line stays first as the fallback for anything that lacks clip. */
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* --------------------------------------------------------------------------
@@ -365,6 +369,7 @@ body {
 
 .admin-surface {
   min-height: 100vh;
+  min-height: 100dvh;
   color: #10244a;
   font-family: Arial, Helvetica, sans-serif;
   background:
@@ -859,13 +864,19 @@ body {
   padding: 20px;
   background: rgba(2, 9, 22, 0.8);
   backdrop-filter: blur(8px);
+  /* a flick that runs past the end of the modal must stop here instead of
+     handing the rest of the gesture to the page underneath */
+  overscroll-behavior: contain;
 }
 
 .participant-modal {
   position: relative;
   width: min(100%, 520px);
   max-height: calc(100vh - 40px);
+  /* dvh tracks the phone's shrinking address bar; vh above is the fallback */
+  max-height: calc(100dvh - 40px);
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 30px;
   border: 1px solid #ccdef3;
   border-radius: 3px;
@@ -1261,48 +1272,65 @@ body {
 /* Sky instead of graph paper: the grid is gone, replaced by a wash and a row
    of drifting pixel clouds — same construction as the login page, just paler
    and slower so it never fights the data. */
+/* The sky and the cloud row are two fixed layers behind the page rather than a
+   `background-attachment: fixed` on the scrolling surface itself. That
+   attachment is the single worst thing you can do to touch scrolling: the
+   browser gives up its fast scroll path and repaints a full-viewport gradient
+   on every frame, which is what made the dashboard stick on a phone. A fixed
+   pseudo-element paints once and is composited from then on. */
 .admin-surface:has(.admin-dashboard) {
   --dash-cloud-far: 360px;
   --dash-cloud-far-y: 46%;
 
-  background-color: #bfe4ff;
+  position: relative;
+  /* keeps the z-index: -1 layers above this element's own background instead of
+     letting them sink behind the page and disappear */
+  isolation: isolate;
+  background: #bfe4ff;
+}
+
+.admin-surface:has(.admin-dashboard)::before,
+.admin-surface:has(.admin-dashboard)::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* sky */
+.admin-surface:has(.admin-dashboard)::before {
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, #86caff 0, #b6e2ff 45%, #dcf2ff 100%);
+}
+
+/* One cloud row, kept low so the header area stays clear behind the logo. It
+   drifts on `transform`, not `background-position` — a transform runs on the
+   compositor and never asks for a repaint, so the clouds keep moving while a
+   finger is dragging the page. The layer overhangs the viewport by one tile on
+   each side, which is exactly what the loop travels, so nothing bald is ever
+   revealed at the edge. */
+.admin-surface:has(.admin-dashboard)::after {
+  left: calc(-1 * var(--dash-cloud-far));
+  right: calc(-1 * var(--dash-cloud-far));
   background-image:
-    /* one cloud row, kept low — the header area stays clear behind the logo */
     linear-gradient(90deg, transparent 0 10%, #e4f4ff 10% 24.7%, transparent 24.7%),
     linear-gradient(90deg, transparent 0 5.3%, #e4f4ff 5.3% 30.7%, transparent 30.7%),
-    linear-gradient(90deg, transparent 0 2%, #e4f4ff 2% 34.7%, transparent 34.7%),
-    /* sky */
-    linear-gradient(180deg, #86caff 0, #b6e2ff 45%, #dcf2ff 100%);
-  /* fixed, so the sky sits behind the page instead of scrolling away and
-     leaving the lower half plain */
-  background-attachment: fixed;
-  background-repeat: repeat-x, repeat-x, repeat-x, no-repeat;
-  background-size:
-    var(--dash-cloud-far) 10px, var(--dash-cloud-far) 10px, var(--dash-cloud-far) 10px,
-    100% 100%;
+    linear-gradient(90deg, transparent 0 2%, #e4f4ff 2% 34.7%, transparent 34.7%);
+  background-repeat: repeat-x;
+  background-size: var(--dash-cloud-far) 10px;
   background-position:
     0 var(--dash-cloud-far-y),
     0 calc(var(--dash-cloud-far-y) + 10px),
-    0 calc(var(--dash-cloud-far-y) + 20px),
-    0 0;
+    0 calc(var(--dash-cloud-far-y) + 20px);
   animation: dash-drift 90s linear infinite;
 }
 
 @keyframes dash-drift {
-  from {
-    background-position:
-      0 var(--dash-cloud-far-y),
-      0 calc(var(--dash-cloud-far-y) + 10px),
-      0 calc(var(--dash-cloud-far-y) + 20px),
-      0 0;
-  }
-  to {
-    background-position:
-      var(--dash-cloud-far) var(--dash-cloud-far-y),
-      var(--dash-cloud-far) calc(var(--dash-cloud-far-y) + 10px),
-      var(--dash-cloud-far) calc(var(--dash-cloud-far-y) + 20px),
-      0 0;
-  }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(var(--dash-cloud-far), 0, 0); }
 }
 
 /* the kicker was tuned for a white page — darken it now that it sits on sky */
@@ -1315,7 +1343,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .admin-surface:has(.admin-dashboard) { animation: none; }
+  .admin-surface:has(.admin-dashboard)::after { animation: none; }
 }
 
 /* Bigger brand lockup — the header grows with it so the spacing stays even */
@@ -1552,9 +1580,11 @@ body {
 
 .night-list {
   max-height: 55vh;
+  max-height: 55dvh;
   margin: 0;
   padding: 0;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   list-style: none;
 }
 
@@ -1704,6 +1734,9 @@ body {
    -------------------------------------------------------------------------- */
 .list-wrap {
   overflow-x: auto;
+  /* the table only owns sideways drags — a vertical swipe over it scrolls the
+     page, and running off its right edge does not rubber-band the whole screen */
+  overscroll-behavior-x: contain;
   border: 2px solid #cfdeef;
   border-radius: 2px;
   background: #ffffff;
