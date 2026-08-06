@@ -1,0 +1,380 @@
+.page {
+  --cream: #fffdd4;
+  --ink: #071f4b;
+  --blue: #0867d1;
+  --light-blue: #45b8f2;
+  --sky-top: #1688dc;
+  --sky-bottom: #79cef6;
+  --yellow: #ffd000;
+  position: relative;
+  display: grid;
+  min-height: 100svh;
+  overflow: hidden;
+  place-items: center;
+  padding: 42px 20px 178px;
+  isolation: isolate;
+  color: var(--ink);
+  background: linear-gradient(var(--sky-top), var(--sky-bottom));
+  image-rendering: pixelated;
+}
+
+.sky,
+.ground {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ground {
+  top: auto;
+  height: 152px;
+  border-top: 8px solid #0d7410;
+  background:
+    linear-gradient(#65dc08 0 18px, #2eb20a 18px 38px, transparent 38px),
+    repeating-conic-gradient(from 90deg, #773100 0 25%, #3f1700 0 50%) 0 38px / 48px 48px;
+  box-shadow:
+    inset 0 8px 0 #baff1d,
+    inset 0 14px 0 #168e13;
+}
+
+.ground::before {
+  position: absolute;
+  right: 0;
+  bottom: 144px;
+  left: 0;
+  height: 44px;
+  background:
+    linear-gradient(135deg, transparent 18px, #0c7510 0) 0 0 / 72px 44px repeat-x,
+    linear-gradient(225deg, transparent 18px, #0c7510 0) 36px 0 / 72px 44px repeat-x;
+  content: "";
+}
+
+.cloud {
+  position: absolute;
+  width: 96px;
+  height: 14px;
+  opacity: 0.96;
+  background: #fff;
+  box-shadow:
+    16px -14px 0 #fff,
+    32px -28px 0 #fff,
+    48px -28px 0 #fff,
+    64px -14px 0 #fff,
+    80px 0 0 #fff;
+  animation: cloud-drift 18s linear infinite alternate;
+}
+
+.cloudSmall {
+  width: 62px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    12px -10px 0 rgba(255, 255, 255, 0.82),
+    24px -18px 0 rgba(255, 255, 255, 0.82),
+    38px -10px 0 rgba(255, 255, 255, 0.82),
+    50px 0 0 rgba(255, 255, 255, 0.82);
+}
+
+.cloudOne { top: 9%; left: 4%; }
+.cloudTwo { top: 25%; left: 19%; animation-delay: -7s; }
+.cloudThree { top: 12%; right: 23%; animation-delay: -11s; }
+.cloudFour { top: 27%; right: 8%; animation-delay: -4s; }
+.cloudFive { top: 5%; left: 44%; animation-delay: -14s; }
+
+.ring {
+  position: absolute;
+  width: 42px;
+  aspect-ratio: 1;
+  border: 8px solid var(--yellow);
+  border-radius: 45%;
+  outline: 4px solid #a96c00;
+  opacity: 0.95;
+  box-shadow:
+    inset 3px 3px 0 #fff281,
+    5px 5px 0 rgba(7, 31, 75, 0.34);
+  animation: ring-bob 2.3s steps(4, end) infinite alternate;
+}
+
+.ringOne { top: 23%; left: max(5vw, calc(50% - 520px)); }
+.ringTwo {
+  top: 36%;
+  right: max(5vw, calc(50% - 560px));
+  width: 34px;
+  border-width: 7px;
+  animation-delay: -1s;
+}
+.ringThree {
+  right: max(14vw, calc(50% - 420px));
+  bottom: 29%;
+  width: 28px;
+  border-width: 6px;
+  animation-delay: -1.7s;
+}
+
+.panel {
+  width: min(100%, 460px);
+  padding: 28px;
+  border: 4px solid var(--ink);
+  border-radius: 2px;
+  background: #f4f9ff;
+  box-shadow:
+    8px 8px 0 var(--blue),
+    14px 14px 0 var(--yellow);
+  text-align: center;
+  animation: panel-arrive 0.55s steps(5, end) both;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-bottom: 24px;
+  animation: rise 0.65s ease both;
+}
+
+.logo {
+  width: min(82%, 310px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(5px 6px 0 rgba(7, 31, 75, 0.18));
+}
+
+.edition {
+  margin-top: 4px;
+  padding: 8px 13px 6px;
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 4px 4px 0 var(--blue);
+  font-family: var(--font-sonic-hud), var(--font-display), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  margin-top: 17px;
+  color: #2d6095;
+  font-family: var(--font-sonic-hud), var(--font-display), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.socialLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.socialCard {
+  position: relative;
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  gap: 16px;
+  overflow: hidden;
+  padding: 13px 18px;
+  border: 3px solid var(--ink);
+  border-radius: 2px;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 5px 5px 0 var(--card-shadow);
+  text-align: left;
+  text-decoration: none;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+  animation: rise 0.6s calc(90ms + (var(--link-index) * 85ms)) ease both;
+}
+
+.socialCard::after {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--card-accent), transparent 82%) 25%, transparent 25%) 0 0 / 12px 12px;
+  transition: opacity 180ms ease;
+  content: "";
+}
+
+.socialCard:hover,
+.socialCard:focus-visible {
+  box-shadow: 7px 7px 0 var(--card-shadow);
+  outline: none;
+  transform: translate(-2px, -2px);
+}
+
+.socialCard:hover::after,
+.socialCard:focus-visible::after {
+  opacity: 1;
+}
+
+.blueCard {
+  --card-accent: var(--light-blue);
+  --card-shadow: var(--blue);
+}
+
+.yellowCard {
+  --card-accent: var(--yellow);
+  --card-shadow: #f5b800;
+}
+
+.socialIcon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  color: var(--ink);
+  background: var(--card-accent);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-size: 20px;
+}
+
+.socialCopy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.socialPlatform {
+  color: #4f739b;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.socialName {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.socialArrow {
+  position: relative;
+  z-index: 1;
+  color: var(--blue);
+  font-size: 24px;
+  font-weight: 900;
+  transition: transform 180ms ease;
+}
+
+.socialCard:hover .socialArrow,
+.socialCard:focus-visible .socialArrow {
+  transform: translateX(4px);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 30px;
+  animation: rise 0.6s 0.5s ease both;
+}
+
+.footer a {
+  color: #176dc3;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.footer a:hover,
+.footer a:focus-visible {
+  color: var(--blue);
+  outline: none;
+  text-decoration: underline;
+}
+
+.footer p {
+  color: #7b93ad;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.footer p span,
+.footer p strong {
+  color: var(--blue);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes panel-arrive {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cloud-drift {
+  from { transform: translateX(-8px); }
+  to { transform: translateX(16px); }
+}
+
+@keyframes ring-bob {
+  from { transform: translateY(-4px); }
+  to { transform: translateY(5px); }
+}
+
+@media (max-width: 600px) {
+  .page { padding: 28px 14px 124px; }
+  .ground { height: 96px; }
+  .ground::before {
+    bottom: 88px;
+    height: 34px;
+    background-size: 56px 34px;
+    background-position: 0 0, 28px 0;
+  }
+  .panel {
+    padding: 20px 16px;
+    box-shadow:
+      6px 6px 0 var(--blue),
+      11px 11px 0 var(--yellow);
+  }
+  .header { margin-bottom: 28px; }
+  .logo { width: min(78vw, 280px); }
+  .ringOne { top: 19%; left: 8px; }
+  .ringTwo { top: 12%; right: 12px; }
+  .ringThree { display: none; }
+  .cloudOne { top: 7%; left: -56px; }
+  .cloudTwo { top: 20%; left: 18%; }
+  .cloudThree { top: 31%; right: -62px; }
+  .cloudFour,
+  .cloudFive { display: none; }
+  .edition { font-size: 10px; }
+  .socialCard { min-height: 72px; padding: 11px 15px; }
+  .socialIcon { width: 42px; height: 42px; flex-basis: 42px; }
+  .footer a { font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud,
+  .ring,
+  .panel,
+  .header,
+  .socialCard,
+  .footer {
+    animation: none;
+  }
+
+  .socialCard,
+  .socialCard::after,
+  .socialArrow {
+    transition: none;
+  }
+}
