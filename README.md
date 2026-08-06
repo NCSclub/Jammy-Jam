@@ -12,7 +12,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) for the public site,
-`/register` for the registration form, `/admin` for the dashboard.
+`/links` for the social link hub, `/register` for the registration form,
+`/admin` for the dashboard.
 
 ```bash
 npm run build   # production build
@@ -65,6 +66,7 @@ src/app/
   layout.tsx          Root layout, loads the pixel display font
   page.tsx            Page composition: hero, digits, schedule, sponsors, footer
   globals.css         Design tokens, font-face, pixel utility classes
+  links/              Public Jammy Jam social link hub
   register/           Public registration form + server action
   admin/              Password-gated dashboard, auth and server actions
 src/components/
