@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import RegistrationClosed from "./RegistrationClosed";
 import RegistrationForm, { type RegistrationValues } from "./RegistrationForm";
@@ -10,7 +10,6 @@ type Props = {
   onClose: () => void;
   /** Decided by the server clock in page.tsx — never the visitor's. */
   registrationOpen: boolean;
-  deadline: string;
   onSubmit: (values: RegistrationValues) => Promise<void>;
 };
 
@@ -56,11 +55,11 @@ export default function RegistrationModal({
   open,
   onClose,
   registrationOpen,
-  deadline,
   onSubmit,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const [closedByServer, setClosedByServer] = useState(false);
 
   /* Escape closes, and Tab is trapped inside the panel — same handling as the
      mobile nav, since both are modal surfaces over the hero. */
@@ -140,10 +139,14 @@ export default function RegistrationModal({
           Back
         </button>
 
-        {registrationOpen ? (
-          <RegistrationForm onClose={onClose} onSubmit={onSubmit} />
+        {registrationOpen && !closedByServer ? (
+          <RegistrationForm
+            onClose={onClose}
+            onSubmit={onSubmit}
+            onRegistrationClosed={() => setClosedByServer(true)}
+          />
         ) : (
-          <RegistrationClosed deadline={deadline} onClose={onClose} />
+          <RegistrationClosed onClose={onClose} />
         )}
       </div>
     </div>,

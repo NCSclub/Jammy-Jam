@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import RegistrationClosed from "@/components/registration/RegistrationClosed";
 import RegistrationForm from "@/components/registration/RegistrationForm";
 import { submitRegistration } from "@/lib/submit-registration";
 
@@ -9,5 +11,14 @@ import { submitRegistration } from "@/lib/submit-registration";
  * server component so the deadline is still judged by the server clock.
  */
 export default function RegistrationPanel() {
-  return <RegistrationForm onSubmit={submitRegistration} />;
+  const [closedByServer, setClosedByServer] = useState(false);
+
+  if (closedByServer) return <RegistrationClosed />;
+
+  return (
+    <RegistrationForm
+      onSubmit={submitRegistration}
+      onRegistrationClosed={() => setClosedByServer(true)}
+    />
+  );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Press_Start_2P, VT323 } from "next/font/google";
+import { RegistrationClosedError } from "@/lib/submit-registration";
 import "./registration-form.css";
 
 const pixelFont = Press_Start_2P({
@@ -49,6 +50,7 @@ type Props = {
   onClose?: () => void;
   /** Receives the values once validation passes. */
   onSubmit?: (values: RegistrationValues) => void | Promise<void>;
+  onRegistrationClosed?: () => void;
 };
 
 const EMPTY: RegistrationValues = {
@@ -213,7 +215,7 @@ function validate(values: RegistrationValues) {
   return errors;
 }
 
-export default function RegistrationForm({ onClose, onSubmit }: Props) {
+export default function RegistrationForm({ onClose, onSubmit, onRegistrationClosed }: Props) {
   const [values, setValues] = useState<RegistrationValues>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
@@ -291,6 +293,10 @@ export default function RegistrationForm({ onClose, onSubmit }: Props) {
       setStatus("done");
     } catch (error) {
       setStatus("idle");
+      if (error instanceof RegistrationClosedError) {
+        onRegistrationClosed?.();
+        return;
+      }
       setErrors({
         email:
           error instanceof Error ? error.message : "Sending failed, try again",

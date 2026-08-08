@@ -3,13 +3,14 @@ import Navbar from "@/components/Navbar";
 import CloudField from "@/components/CloudField";
 import Countdown from "@/components/Countdown";
 import HeroActions from "@/components/HeroActions";
-import { formatDeadline, isRegistrationOpen, siteConfig } from "@/config/site";
+import { isRegistrationOpen, siteConfig } from "@/config/site";
 import { AboutUs } from "@/components/sections/about-us";
 import { JammyJamByTheDigits } from "@/components/sections/jammy-jam-by-the-digits";
 import { EventSchedule } from "@/components/sections/event-schedule";
 import { Sponsors } from "@/components/sections/Sponsors";
 import { Footer } from "@/components/layout/Footer";
 
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   /* server component, so the cutoff is decided by the server clock — the same
@@ -54,10 +55,7 @@ export default function Home() {
               {siteConfig.ctaHint.suffix}
             </p>
 
-            <HeroActions
-              registrationOpen={registrationOpen}
-              deadline={formatDeadline()}
-            />
+            <HeroActions registrationOpen={registrationOpen} />
 
             <div className="mt-8 w-full max-w-[28rem] sm:mt-10 md:mt-12">
               <Countdown />

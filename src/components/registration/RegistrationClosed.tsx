@@ -25,10 +25,8 @@ const bodyFont = VT323({
  * to the site instead.
  */
 export default function RegistrationClosed({
-  deadline,
   onClose,
 }: {
-  deadline: string;
   onClose?: () => void;
 }) {
   return (
@@ -63,10 +61,11 @@ export default function RegistrationClosed({
             <div className="px-6 py-12 text-center sm:px-8">
               <div className="flex flex-col items-center gap-6">
                 <span className="jj-done__coin" aria-hidden="true" />
-                <p className="jj-done text-sm sm:text-base">See ya next time!</p>
+                <p className="jj-done text-sm sm:text-base">
+                  Registrations are closed
+                </p>
                 <p className="jj-hint max-w-sm">
-                  Sign-ups shut on {deadline}. Follow the NCS Club channels for
-                  the next jam — or come say hi at the venue on 13 August.
+                  See you at the next event!
                 </p>
                 {onClose ? (
                   <button

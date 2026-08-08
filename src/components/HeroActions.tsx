@@ -47,12 +47,10 @@ type HeroActionsProps = {
   /** Evaluated on the server so a visitor cannot reopen sign-ups by changing
       their system clock; POST /api/register re-checks it anyway. */
   registrationOpen: boolean;
-  deadline: string;
 };
 
 export default function HeroActions({
   registrationOpen,
-  deadline,
 }: HeroActionsProps) {
   const [formOpen, setFormOpen] = useState(false);
 
@@ -75,7 +73,6 @@ export default function HeroActions({
         open={formOpen}
         onClose={() => setFormOpen(false)}
         registrationOpen={registrationOpen}
-        deadline={deadline}
         onSubmit={submitRegistration}
       />
     </div>
