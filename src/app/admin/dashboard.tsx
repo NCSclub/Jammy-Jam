@@ -400,7 +400,10 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           <Image src="/brand/jammy-jam-logo.png" alt="Jammy Jam" width={598} height={422} priority />
           <span>ADMIN</span>
         </div>
-        <button className="ghost-button" onClick={handleLogout}>Log out ↗</button>
+        <div className="heading-actions">
+          <button className="ghost-button" onClick={() => router.push("/jury")}>Jury room</button>
+          <button className="ghost-button" onClick={handleLogout}>Log out ↗</button>
+        </div>
       </header>
 
       <section className="dashboard-heading">

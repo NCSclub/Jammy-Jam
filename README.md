@@ -13,7 +13,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) for the public site,
 `/links` for the social link hub, `/register` for the registration form,
-`/admin` for the dashboard.
+`/submit` for the game submission form, `/admin` for the dashboard.
 
 ```bash
 npm run build   # production build
@@ -68,6 +68,7 @@ src/app/
   globals.css         Design tokens, font-face, pixel utility classes
   links/              Public Jammy Jam social link hub
   register/           Public registration form + server action
+  submit/             Game submission form (build upload -> Supabase storage)
   admin/              Password-gated dashboard, auth and server actions
 src/components/
   Navbar.tsx          Responsive nav, focus-trapped mobile dialog

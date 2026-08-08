@@ -1,0 +1,160 @@
+/* ==========================================================================
+   JAMMY JAM — game submission skin
+
+   The board itself (frame, checker strip, labels, inputs, buttons, the done
+   panel) is the registration form's, imported by submission-form.tsx. Only the
+   two things that page has and the other does not live here: the build drop
+   zone and its upload meter. Both are built from the same tokens — the panel
+   wells, the grey frame, the gold and the cyan focus — so they read as parts
+   of the same cartridge rather than a widget bolted onto it.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Drop zone — an oversized input well you can also drag a file onto
+   -------------------------------------------------------------------------- */
+.jj-drop {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 150px;
+  padding: 26px 18px 22px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--jj-panel-900);
+  /* the same recessed slot as .jj-input, just deeper */
+  box-shadow:
+    inset 0 0 0 3px var(--jj-frame-dark),
+    inset 0 3px 0 3px rgba(0, 0, 0, 0.6);
+  transition: background-color 0.1s, box-shadow 0.1s steps(2, end);
+}
+
+.jj-drop:hover {
+  background: #0a45b0;
+}
+
+/* Dragging over it and keyboard focus are the same state visually: cyan slot,
+   exactly like a focused input, so the form only ever speaks one language. */
+.jj-drop--over,
+.jj-drop:focus-within {
+  background: #0d4ac0;
+  box-shadow:
+    inset 0 0 0 3px var(--jj-cyan),
+    inset 0 3px 0 3px rgba(0, 0, 0, 0.6),
+    inset 0 0 12px rgba(87, 216, 255, 0.3);
+}
+
+.jj-drop--filled {
+  box-shadow:
+    inset 0 0 0 3px var(--jj-gold-700),
+    inset 0 3px 0 3px rgba(0, 0, 0, 0.6);
+}
+
+/* The file input covers the whole zone so the click target is the zone, not a
+   native "Choose file" button — but it stays a real focusable input, which is
+   what puts the cyan ring on :focus-within above. */
+.jj-drop input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.jj-drop input:disabled {
+  cursor: wait;
+}
+
+/* Upload arrow, drawn as one 6px block plus its clones — a triangle widening
+   downward from the apex, a stem, then the floor bar. margin-bottom reserves
+   the room the box-shadows occupy, since shadows take no layout space. */
+.jj-drop__icon {
+  width: 6px;
+  height: 6px;
+  margin-bottom: 26px;
+  background: var(--jj-gold);
+  box-shadow:
+    -6px 6px 0 var(--jj-gold), 0 6px 0 var(--jj-gold), 6px 6px 0 var(--jj-gold),
+    -12px 12px 0 var(--jj-gold), -6px 12px 0 var(--jj-gold), 0 12px 0 var(--jj-gold),
+    6px 12px 0 var(--jj-gold), 12px 12px 0 var(--jj-gold),
+    0 18px 0 var(--jj-gold),
+    -12px 24px 0 var(--jj-gold), -6px 24px 0 var(--jj-gold), 0 24px 0 var(--jj-gold),
+    6px 24px 0 var(--jj-gold), 12px 24px 0 var(--jj-gold);
+}
+
+.jj-drop--filled .jj-drop__icon {
+  background: var(--jj-cyan);
+  box-shadow:
+    -6px 6px 0 var(--jj-cyan), 0 6px 0 var(--jj-cyan), 6px 6px 0 var(--jj-cyan),
+    -12px 12px 0 var(--jj-cyan), -6px 12px 0 var(--jj-cyan), 0 12px 0 var(--jj-cyan),
+    6px 12px 0 var(--jj-cyan), 12px 12px 0 var(--jj-cyan),
+    0 18px 0 var(--jj-cyan),
+    -12px 24px 0 var(--jj-cyan), -6px 24px 0 var(--jj-cyan), 0 24px 0 var(--jj-cyan),
+    6px 24px 0 var(--jj-cyan), 12px 24px 0 var(--jj-cyan);
+}
+
+.jj-drop__name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--jj-ink);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  /* a build filename is long and has no spaces to break on */
+  overflow-wrap: anywhere;
+}
+
+.jj-drop__hint {
+  color: var(--jj-ink-dim);
+  font-family: var(--jj-font-body), ui-monospace, monospace;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+/* --------------------------------------------------------------------------
+   Upload meter — appears only while a build is in flight
+   -------------------------------------------------------------------------- */
+.jj-progress-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.jj-progress {
+  overflow: hidden;
+  height: 20px;
+  background: var(--jj-panel-900);
+  box-shadow: inset 0 0 0 3px var(--jj-frame-dark);
+}
+
+/* Stepped transition and the striping keep it filling in blocks: a smooth
+   sliding bar would be the one un-pixelated thing on the page. */
+.jj-progress__bar {
+  display: block;
+  height: 100%;
+  background-color: var(--jj-cta);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.28) 0 3px,
+    transparent 3px 10px
+  );
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.35);
+  transition: width 0.2s steps(5, end);
+}
+
+.jj-progress__label {
+  color: var(--jj-cyan);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 9px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-drop,
+  .jj-progress__bar {
+    transition: none;
+  }
+}

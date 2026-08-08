@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  /* The submission page moved to /submit — keep old links alive. */
+  async redirects() {
+    return [{ source: "/submission", destination: "/submit", permanent: true }];
+  },
 };
 
 

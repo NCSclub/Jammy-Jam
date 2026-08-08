@@ -1,0 +1,36 @@
+.submission-page {
+  --ink: #17152d;
+  --gold: #fcbf09;
+  min-height: 100vh;
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 5.5rem 1.25rem 3rem;
+  color: var(--ink);
+  background: linear-gradient(#38a8ed 0 58%, #74d95a 58% 64%, #168a43 64%);
+}
+.submission-sky { position: fixed; inset: 0; pointer-events: none; opacity: .28; background: radial-gradient(circle at 18% 18%, white 0 4%, transparent 4.2%), radial-gradient(circle at 82% 30%, white 0 5%, transparent 5.2%); }
+.submission-back { position: absolute; z-index: 2; top: 1.5rem; left: clamp(1rem, 4vw, 3rem); color: white; font-family: var(--font-pixel), monospace; font-size: .72rem; text-shadow: 2px 2px #173b73; }
+.submission-card { position: relative; z-index: 1; width: min(100%, 720px); overflow: hidden; border: 4px solid #17152d; border-radius: 18px 4px 18px 4px; background: #fff8d9; box-shadow: 0 0 0 5px #fcbf09, 0 0 0 9px #17152d, 12px 14px 0 rgb(23 21 45 / .28); }
+.submission-header { padding: 2rem clamp(1.25rem, 5vw, 3rem) 1.5rem; color: white; background: linear-gradient(135deg, #813dc4, #482592); }
+.submission-kicker { margin: 0 0 .65rem; color: #fcbf09; font: .68rem/1.5 var(--font-pixel), monospace; letter-spacing: .08em; }
+.submission-header h1, .submission-done h1 { margin: 0; font: clamp(1.25rem, 4vw, 2rem)/1.35 var(--font-pixel), monospace; text-transform: uppercase; }
+.submission-header p:last-child { margin: .8rem 0 0; color: #eee6ff; font: 1.35rem/1.1 var(--font-body), sans-serif; }
+.submission-checker { height: 14px; background: conic-gradient(#17152d 25%,#fff 0 50%,#17152d 0 75%,#fff 0) 0 0/14px 14px; }
+.submission-form { display: grid; gap: 1.1rem; padding: clamp(1.4rem, 5vw, 2.5rem); }
+.submission-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+.submission-form label { display: grid; gap: .45rem; font: .65rem/1.5 var(--font-pixel), monospace; text-transform: uppercase; }
+.submission-form input:not([type=file]), .submission-form textarea { width: 100%; border: 3px solid #17152d; border-radius: 3px 10px 3px 10px; background: white; padding: .75rem .85rem; color: #17152d; outline: none; font: 1.25rem/1.1 var(--font-body), sans-serif; text-transform: none; box-shadow: inset 3px 3px #ddd4ae; }
+.submission-form input:focus, .submission-form textarea:focus { border-color: #813dc4; box-shadow: 0 0 0 3px #fcbf09; }
+.submission-drop { position: relative; min-height: 105px; place-content: center; text-align: center; border: 3px dashed #813dc4; border-radius: 4px 14px; background: #f2e5ff; cursor: pointer; }
+.submission-drop small { font: 1rem var(--font-body), sans-serif; color: #5c4d74; }
+.submission-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.submission-button { justify-self: center; border: 3px solid #17152d; border-radius: 4px 12px; padding: .9rem 1.4rem; color: #17152d; background: #fcbf09; box-shadow: 4px 4px #17152d; font: .72rem var(--font-pixel), monospace; text-transform: uppercase; cursor: pointer; }
+.submission-button:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px #17152d; }
+.submission-button:disabled { opacity: .65; cursor: wait; }
+.submission-error { margin: 0; color: #b51f36; text-align: center; font: 1.15rem var(--font-body), sans-serif; }
+.submission-done { display: flex; min-height: 410px; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 3rem 1.5rem; text-align: center; }
+.submission-done > p:not(.submission-kicker) { font: 1.35rem var(--font-body), sans-serif; }
+.submission-coin { width: 52px; height: 52px; border: 5px solid #17152d; border-radius: 50%; background: #fcbf09; box-shadow: inset 0 0 0 6px #fff09d, 4px 4px #6d4511; }
+@media (max-width: 620px) { .submission-grid { grid-template-columns: 1fr; } .submission-card { border-width: 3px; } }
