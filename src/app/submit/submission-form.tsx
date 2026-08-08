@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Press_Start_2P, VT323 } from "next/font/google";
 import {
-  buildExtension,
+  ASSETS,
+  type AssetKind,
+  assetExtension,
   formatBytes,
-  MAX_BUILD_SIZE,
+  isHttpUrl,
+  MAX_OTHER_LINKS,
 } from "@/lib/submission-limits";
 /* The whole pixel vocabulary — frame, checker strip, labels, inputs, buttons —
    is the registration form's. Importing it rather than restyling this page
@@ -28,44 +31,64 @@ const bodyFont = VT323({
   variable: "--jj-font-body",
 });
 
-type Values = {
-  teamName: string;
-  gameTitle: string;
-  contactEmail: string;
-  description: string;
-  controls: string;
-};
+type FieldName =
+  | "teamName"
+  | "gameTitle"
+  | "build"
+  | "cover"
+  | "report"
+  | "deck"
+  | "notes"
+  | "otherLinks";
 
-type FieldName = keyof Values | "build";
+type Files = Record<AssetKind, File | null>;
+type Links = { report: string; deck: string };
 
-const EMPTY: Values = {
-  teamName: "",
-  gameTitle: "",
-  contactEmail: "",
-  description: "",
-  controls: "",
-};
+const NO_FILES: Files = { build: null, cover: null, report: null, deck: null };
 
-/* Mirrors the checks in /api/submissions and the column constraints in
-   supabase/submissions-setup.sql, so nothing gets uploaded only to bounce. */
-function validate(values: Values, file: File | null) {
+/* The two attachments that may be a link instead of an upload. */
+const LINKABLE = ["report", "deck"] as const;
+type Linkable = (typeof LINKABLE)[number];
+
+type Progress = { label: string; percent: number; step: number; total: number };
+
+/** Mirrors /api/submissions and the column constraints in the setup SQL. */
+function validate(teamName: string, gameTitle: string, files: Files, links: Links) {
   const errors: Partial<Record<FieldName, string>> = {};
 
-  if (!values.teamName.trim()) errors.teamName = "Enter your team name";
-  if (!values.gameTitle.trim()) errors.gameTitle = "Name your game";
-  if (!values.contactEmail.trim()) errors.contactEmail = "Enter a contact email";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.contactEmail.trim()))
-    errors.contactEmail = "That email looks broken";
-  if (!values.description.trim()) errors.description = "Describe your game";
-  if (!values.controls.trim()) errors.controls = "Explain how to play it";
+  if (!teamName.trim()) errors.teamName = "Enter your team name";
+  if (!gameTitle.trim()) errors.gameTitle = "Name your game";
 
-  if (!file) errors.build = "Choose your game build";
-  else if (!buildExtension(file.name))
-    errors.build = "Use a .zip, .rar, .7z or .exe";
-  else if (file.size > MAX_BUILD_SIZE)
-    errors.build = `That build is ${formatBytes(file.size)} — 500 MB max`;
+  for (const kind of ["build", "cover"] as const) {
+    const problem = checkFile(kind, files[kind]);
+    if (problem) errors[kind] = problem;
+  }
+
+  for (const kind of LINKABLE) {
+    const file = files[kind];
+    const link = links[kind].trim();
+    if (!file && !link) {
+      errors[kind] = "Attach a file or paste a link";
+    } else if (file) {
+      const problem = checkFile(kind, file);
+      if (problem) errors[kind] = problem;
+    } else if (!isHttpUrl(link)) {
+      errors[kind] = "That link needs to start with https://";
+    }
+  }
 
   return errors;
+}
+
+function checkFile(kind: AssetKind, file: File | null) {
+  if (!file) return `Choose your ${ASSETS[kind].label}`;
+  if (!assetExtension(kind, file.name))
+    return `Use ${ASSETS[kind].extensions.join(", ")}`;
+  /* The only place a size is ever spelled out. The zones stay quiet about the
+     caps; you only hear about one when you have actually hit it. */
+  if (file.size > ASSETS[kind].maxSize)
+    return `Too big — ${formatBytes(ASSETS[kind].maxSize)} max`;
+  return null;
 }
 
 async function json(response: Response) {
@@ -80,7 +103,7 @@ async function json(response: Response) {
  * tab and submit nothing. XHR still exposes `upload.onprogress`, so this is the
  * one place the old API is the right one.
  */
-function upload(url: string, file: File, onProgress: (percent: number) => void) {
+function put(url: string, file: File, onProgress: (percent: number) => void) {
   return new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("PUT", url);
@@ -96,7 +119,7 @@ function upload(url: string, file: File, onProgress: (percent: number) => void) 
     request.onload = () =>
       request.status >= 200 && request.status < 300
         ? resolve()
-        : reject(new Error("The build upload failed. Please try again."));
+        : reject(new Error("An upload failed. Please try again."));
     request.onerror = () =>
       reject(new Error("The upload dropped. Check your connection and retry."));
     request.send(file);
@@ -104,54 +127,70 @@ function upload(url: string, file: File, onProgress: (percent: number) => void) 
 }
 
 export default function SubmissionForm() {
-  const [values, setValues] = useState<Values>(EMPTY);
+  const [teamName, setTeamName] = useState("");
+  const [gameTitle, setGameTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [files, setFiles] = useState<Files>(NO_FILES);
+  const [links, setLinks] = useState<Links>({ report: "", deck: "" });
+  /* Starts empty — the section is optional, so it opens as a bare button
+     rather than an input already asking to be filled in. */
+  const [otherLinks, setOtherLinks] = useState<string[]>([]);
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
-  const [status, setStatus] = useState<"idle" | "uploading" | "saving" | "done">(
-    "idle",
-  );
-  const [percent, setPercent] = useState(0);
-  const [file, setFile] = useState<File | null>(null);
-  const [dragging, setDragging] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [progress, setProgress] = useState<Progress | null>(null);
 
-  const busy = status === "uploading" || status === "saving";
+  const busy = status === "sending";
 
-  const update =
-    (name: keyof Values) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { value } = event.target;
-      setValues((current) => ({ ...current, [name]: value }));
-      setErrors((current) => {
-        if (!current[name]) return current;
-        const next = { ...current };
-        delete next[name];
-        return next;
-      });
-    };
-
-  function chooseFile(next: File | null) {
-    setFile(next);
+  function clearError(name: FieldName) {
     setErrors((current) => {
-      if (!current.build) return current;
-      const rest = { ...current };
-      delete rest.build;
-      return rest;
+      if (!current[name]) return current;
+      const next = { ...current };
+      delete next[name];
+      return next;
     });
   }
 
-  /* Drop anywhere on the zone. Only the first file is taken — a build is one
-     archive, and silently uploading the wrong one of several is worse. */
-  function handleDrop(event: React.DragEvent) {
-    event.preventDefault();
-    setDragging(false);
-    if (busy) return;
-    const dropped = event.dataTransfer.files?.[0];
-    if (dropped) chooseFile(dropped);
+  /* Choosing a file drops the link for that slot and vice versa: one document,
+     one source. Letting both stand is how the jury ends up reading the older
+     of two versions. */
+  function chooseFile(kind: AssetKind, file: File | null) {
+    setFiles((current) => ({ ...current, [kind]: file }));
+    if (file && (kind === "report" || kind === "deck")) {
+      setLinks((current) => ({ ...current, [kind]: "" }));
+    }
+    clearError(kind);
+  }
+
+  function changeLink(kind: Linkable, value: string) {
+    setLinks((current) => ({ ...current, [kind]: value }));
+    if (value) setFiles((current) => ({ ...current, [kind]: null }));
+    clearError(kind);
+  }
+
+  function changeOtherLink(index: number, value: string) {
+    setOtherLinks((current) =>
+      current.map((link, at) => (at === index ? value : link)),
+    );
+    clearError("otherLinks");
+  }
+
+  function removeOtherLink(index: number) {
+    setOtherLinks((current) => current.filter((_, at) => at !== index));
+    clearError("otherLinks");
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextErrors = validate(values, file);
+    const nextErrors = validate(teamName, gameTitle, files, links);
+
+    /* Rows left blank are just an unused slot, not a mistake — they get dropped
+       below. Only something typed and wrong is worth stopping for. */
+    const extras = otherLinks.map((link) => link.trim()).filter(Boolean);
+    if (extras.some((link) => !isHttpUrl(link))) {
+      nextErrors.otherLinks = "Every extra link needs to start with https://";
+    }
+
     setErrors(nextErrors);
 
     const firstInvalid = Object.keys(nextErrors)[0];
@@ -159,41 +198,65 @@ export default function SubmissionForm() {
       document.getElementById(`jj-${firstInvalid}`)?.focus();
       return;
     }
-    if (!file) return;
 
+    /* Only the slots that actually hold a file get uploaded — report and deck
+       may be links, and a link costs nothing to send. */
+    const queue = (Object.keys(ASSETS) as AssetKind[])
+      .map((kind) => ({ kind, file: files[kind] }))
+      .filter((item): item is { kind: AssetKind; file: File } => Boolean(item.file));
+
+    setStatus("sending");
     try {
-      setPercent(0);
-      setStatus("uploading");
-      const signed = await json(
-        await fetch("/api/submissions/upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: file.name, fileSize: file.size }),
-        }),
-      );
+      const stored: Partial<Record<AssetKind, { path: string; name: string; size: number }>> = {};
 
-      await upload(signed.uploadUrl, file, setPercent);
+      for (const [index, { kind, file }] of queue.entries()) {
+        setProgress({
+          label: ASSETS[kind].label,
+          percent: 0,
+          step: index + 1,
+          total: queue.length,
+        });
 
-      setStatus("saving");
+        const signed = await json(
+          await fetch("/api/submissions/upload-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ kind, fileName: file.name, fileSize: file.size }),
+          }),
+        );
+
+        await put(signed.uploadUrl, file, (percent) =>
+          setProgress((current) => (current ? { ...current, percent } : current)),
+        );
+
+        stored[kind] = { path: signed.path, name: file.name, size: file.size };
+      }
+
+      setProgress({ label: "submission", percent: 100, step: queue.length, total: queue.length });
       await json(
         await fetch("/api/submissions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...values,
-            buildPath: signed.path,
-            buildName: file.name,
-            buildSize: file.size,
+            teamName,
+            gameTitle,
+            notes,
+            build: stored.build,
+            cover: stored.cover,
+            report: stored.report,
+            deck: stored.deck,
+            reportUrl: links.report.trim(),
+            deckUrl: links.deck.trim(),
+            otherLinks: extras,
           }),
         }),
       );
       setStatus("done");
     } catch (caught) {
       setStatus("idle");
-      setPercent(0);
+      setProgress(null);
       setErrors({
-        build:
-          caught instanceof Error ? caught.message : "Something went wrong.",
+        notes: caught instanceof Error ? caught.message : "Something went wrong.",
       });
     }
   }
@@ -205,7 +268,9 @@ export default function SubmissionForm() {
       <div className="jj-frame jj-cut p-1">
         <div className="jj-frame__bevel jj-cut p-1">
           <div className="jj-frame__body jj-cut">
-            <header className="jj-header px-6 pt-7 pb-8 sm:px-8">
+            {/* deep bottom padding keeps Sonic's head clear of the subtitle —
+                he stands 41px above the checker strip */}
+            <header className="jj-header px-6 pt-7 pb-16 sm:px-8">
               <h1 className="jj-title text-base sm:text-xl">
                 Jammy Jam
                 <br />
@@ -216,7 +281,22 @@ export default function SubmissionForm() {
               </p>
             </header>
 
-            <div className="jj-checker" aria-hidden="true" />
+            {/* Same finish-line strip and runner as the registration form: he
+                jogs in from the left, parks, says hi, then dashes off the right.
+                --jj-stop is where he parks — the registration value is measured
+                to that form's LAST NAME asterisk, which does not exist here, so
+                this page puts him just right of centre instead. */}
+            <div
+              className="jj-track"
+              aria-hidden="true"
+              style={{ "--jj-stop": "calc(50% + 110px)" } as CSSProperties}
+            >
+              <div className="jj-checker" />
+              <div className="jj-runner">
+                <span className="jj-runner__bubble">Hey again!</span>
+                <span className="jj-runner__sprite" />
+              </div>
+            </div>
 
             {status === "done" ? (
               <div className="px-6 py-14 text-center sm:px-8">
@@ -224,8 +304,8 @@ export default function SubmissionForm() {
                   <span className="jj-done__coin" aria-hidden="true" />
                   <p className="jj-done text-sm sm:text-base">Game submitted!</p>
                   <p className="jj-hint max-w-sm">
-                    Your build is in. We&apos;ll email {values.contactEmail} if
-                    anything is missing. Good luck, player.
+                    {gameTitle} is in, with everything attached. Good luck,
+                    player.
                   </p>
                   <Link
                     href="/"
@@ -237,155 +317,186 @@ export default function SubmissionForm() {
               </div>
             ) : (
               <form noValidate onSubmit={handleSubmit} className="px-6 py-7 sm:px-8">
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field name="teamName" label="Team Name" required error={errors.teamName}>
+                <div className="grid gap-6">
+                  <Field name="teamName" label="Team name" required error={errors.teamName}>
                     <input
                       id="jj-teamName"
                       name="teamName"
                       type="text"
                       maxLength={80}
                       placeholder="Enter your team name"
-                      value={values.teamName}
-                      onChange={update("teamName")}
+                      value={teamName}
+                      onChange={(event) => {
+                        setTeamName(event.target.value);
+                        clearError("teamName");
+                      }}
                       aria-invalid={Boolean(errors.teamName)}
                       aria-describedby={errors.teamName ? "jj-teamName-error" : undefined}
                       className="jj-input jj-cut jj-cut--sm"
                     />
                   </Field>
 
-                  <Field name="gameTitle" label="Game Title" required error={errors.gameTitle}>
+                  <Field name="gameTitle" label="Name of your game" required error={errors.gameTitle}>
                     <input
                       id="jj-gameTitle"
                       name="gameTitle"
                       type="text"
                       maxLength={100}
                       placeholder="Enter your game's name"
-                      value={values.gameTitle}
-                      onChange={update("gameTitle")}
+                      value={gameTitle}
+                      onChange={(event) => {
+                        setGameTitle(event.target.value);
+                        clearError("gameTitle");
+                      }}
                       aria-invalid={Boolean(errors.gameTitle)}
                       aria-describedby={errors.gameTitle ? "jj-gameTitle-error" : undefined}
                       className="jj-input jj-cut jj-cut--sm"
                     />
                   </Field>
-                </div>
 
-                <div className="mt-5 grid gap-5">
                   <Field
-                    name="contactEmail"
-                    label="Contact Email"
+                    name="build"
+                    label="The zip folder, executable inside"
                     required
-                    error={errors.contactEmail}
+                    error={errors.build}
                   >
-                    <input
-                      id="jj-contactEmail"
-                      name="contactEmail"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="Where we can reach you"
-                      value={values.contactEmail}
-                      onChange={update("contactEmail")}
-                      aria-invalid={Boolean(errors.contactEmail)}
-                      aria-describedby={
-                        errors.contactEmail ? "jj-contactEmail-error" : undefined
-                      }
-                      className="jj-input jj-cut jj-cut--sm"
+                    <Drop
+                      kind="build"
+                      file={files.build}
+                      busy={busy}
+                      invalid={Boolean(errors.build)}
+                      onChoose={chooseFile}
+                      idle="Drop your build here"
                     />
                   </Field>
 
                   <Field
-                    name="description"
-                    label="What is your game?"
+                    name="cover"
+                    label="One screenshot, for the cover"
                     required
-                    error={errors.description}
+                    error={errors.cover}
                   >
-                    <textarea
-                      id="jj-description"
-                      name="description"
-                      rows={4}
-                      maxLength={800}
-                      placeholder="A few lines on the idea, the theme and what makes it yours..."
-                      value={values.description}
-                      onChange={update("description")}
-                      aria-invalid={Boolean(errors.description)}
-                      aria-describedby={
-                        errors.description ? "jj-description-error" : undefined
-                      }
-                      className="jj-input jj-cut jj-cut--sm"
+                    <Drop
+                      kind="cover"
+                      file={files.cover}
+                      busy={busy}
+                      invalid={Boolean(errors.cover)}
+                      onChoose={chooseFile}
+                      idle="Drop your cover screenshot"
+                      preview
                     />
                   </Field>
 
-                  <Field
-                    name="controls"
-                    label="How do we play it?"
-                    required
-                    error={errors.controls}
-                  >
+                  <Field name="report" label="The report" required error={errors.report}>
+                    <FileOrLink
+                      kind="report"
+                      file={files.report}
+                      link={links.report}
+                      busy={busy}
+                      invalid={Boolean(errors.report)}
+                      onChoose={chooseFile}
+                      onLink={changeLink}
+                      idle="Drop your report"
+                      placeholder="https://... (Docs, Drive, PDF)"
+                    />
+                  </Field>
+
+                  <Field name="deck" label="The presentation" required error={errors.deck}>
+                    <FileOrLink
+                      kind="deck"
+                      file={files.deck}
+                      link={links.deck}
+                      busy={busy}
+                      invalid={Boolean(errors.deck)}
+                      onChoose={chooseFile}
+                      onLink={changeLink}
+                      idle="Drop your presentation"
+                      placeholder="https://... (Canva, Slides, PDF)"
+                    />
+                  </Field>
+
+                  <Field name="notes" label="Anything to add" error={errors.notes}>
                     <textarea
-                      id="jj-controls"
-                      name="controls"
+                      id="jj-notes"
+                      name="notes"
                       rows={3}
                       maxLength={800}
-                      placeholder="Keys, gamepad, anything we need to know to start..."
-                      value={values.controls}
-                      onChange={update("controls")}
-                      aria-invalid={Boolean(errors.controls)}
-                      aria-describedby={errors.controls ? "jj-controls-error" : undefined}
+                      placeholder="Controls, known bugs, credits, a demo link — anything else we should know."
+                      value={notes}
+                      onChange={(event) => {
+                        setNotes(event.target.value);
+                        clearError("notes");
+                      }}
+                      aria-invalid={Boolean(errors.notes)}
+                      aria-describedby={errors.notes ? "jj-notes-error" : undefined}
                       className="jj-input jj-cut jj-cut--sm"
                     />
                   </Field>
 
-                  <Field name="build" label="Game Build" required error={errors.build}>
-                    <div
-                      className={`jj-drop jj-cut jj-cut--sm${file ? " jj-drop--filled" : ""}${
-                        dragging ? " jj-drop--over" : ""
-                      }`}
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        if (!busy) setDragging(true);
-                      }}
-                      onDragLeave={() => setDragging(false)}
-                      onDrop={handleDrop}
-                    >
-                      <span className="jj-drop__icon" aria-hidden="true" />
-                      <span className="jj-drop__name">
-                        {file ? file.name : "Drop your build here"}
-                      </span>
-                      <span className="jj-drop__hint">
-                        {file
-                          ? `${formatBytes(file.size)} — click to swap`
-                          : ".ZIP .RAR .7Z .EXE · 500 MB max"}
-                      </span>
-                      <input
-                        id="jj-build"
-                        type="file"
-                        disabled={busy}
-                        accept=".zip,.rar,.7z,.exe,application/zip,application/x-rar-compressed,application/x-7z-compressed,application/vnd.microsoft.portable-executable"
-                        onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
-                        aria-invalid={Boolean(errors.build)}
-                        aria-describedby={errors.build ? "jj-build-error" : undefined}
-                      />
+                  <Field name="otherLinks" label="Other links (optional)" error={errors.otherLinks}>
+                    <div className="jj-extra">
+                      {otherLinks.map((value, index) => (
+                        <div className="jj-extra__row" key={index}>
+                          <input
+                            id={index === 0 ? "jj-otherLinks" : undefined}
+                            type="url"
+                            inputMode="url"
+                            disabled={busy}
+                            placeholder="https://..."
+                            value={value}
+                            onChange={(event) => changeOtherLink(index, event.target.value)}
+                            aria-label={`Extra link ${index + 1}`}
+                            className="jj-input jj-cut jj-cut--sm"
+                          />
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => removeOtherLink(index)}
+                            className="jj-extra__remove jj-cut jj-cut--sm"
+                            aria-label={`Remove extra link ${index + 1}`}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+
+                      {otherLinks.length < MAX_OTHER_LINKS ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setOtherLinks((current) => [...current, ""])}
+                          className="jj-extra__add jj-cut jj-cut--sm"
+                        >
+                          + Add link
+                        </button>
+                      ) : null}
+
+                      <p className="jj-squad__note">
+                        Anything else you want us to see — Figma, a demo video,
+                        a devlog, the live build.
+                      </p>
                     </div>
                   </Field>
 
-                  {busy ? (
+                  {progress ? (
                     <div className="jj-progress-wrap">
                       <div
                         className="jj-progress jj-cut jj-cut--sm"
                         role="progressbar"
                         aria-valuemin={0}
                         aria-valuemax={100}
-                        aria-valuenow={status === "saving" ? 100 : percent}
+                        aria-valuenow={progress.percent}
                         aria-label="Upload progress"
                       >
                         <span
                           className="jj-progress__bar"
-                          style={{ width: `${status === "saving" ? 100 : percent}%` }}
+                          style={{ width: `${progress.percent}%` }}
                         />
                       </div>
                       <p className="jj-progress__label">
-                        {status === "saving"
+                        {progress.label === "submission"
                           ? "Saving submission..."
-                          : `Uploading build — ${percent}%`}
+                          : `${progress.step}/${progress.total} — uploading ${progress.label} ${progress.percent}%`}
                       </p>
                     </div>
                   ) : null}
@@ -409,6 +520,143 @@ export default function SubmissionForm() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+/** A drop zone: click it, or drag a file onto it. */
+function Drop({
+  kind,
+  file,
+  busy,
+  invalid,
+  onChoose,
+  idle,
+  preview,
+}: {
+  kind: AssetKind;
+  file: File | null;
+  busy: boolean;
+  invalid: boolean;
+  onChoose: (kind: AssetKind, file: File | null) => void;
+  idle: string;
+  preview?: boolean;
+}) {
+  const [dragging, setDragging] = useState(false);
+
+  const thumbnail = useMemo(
+    () => (preview && file ? URL.createObjectURL(file) : null),
+    [preview, file],
+  );
+
+  /* An object URL is held by the document until it is revoked, so the previous
+     one is released the moment a new file replaces it rather than at unload.
+     Cleanup is all this effect does — the URL itself is derived above, not
+     pushed into state, which would re-render for a value we already have. */
+  useEffect(() => {
+    if (!thumbnail) return;
+    return () => URL.revokeObjectURL(thumbnail);
+  }, [thumbnail]);
+
+  return (
+    <div
+      className={[
+        "jj-drop jj-cut jj-cut--sm",
+        file ? "jj-drop--filled" : "",
+        dragging ? "jj-drop--over" : "",
+        invalid ? "jj-drop--invalid" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onDragOver={(event) => {
+        event.preventDefault();
+        if (!busy) setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setDragging(false);
+        if (busy) return;
+        /* only the first file — an attachment is one document, and silently
+           taking the wrong one of several is worse than taking none */
+        const dropped = event.dataTransfer.files?.[0];
+        if (dropped) onChoose(kind, dropped);
+      }}
+    >
+      {thumbnail ? (
+        /* eslint-disable-next-line @next/next/no-img-element -- a local object
+           URL; next/image cannot optimise a blob that never leaves the tab */
+        <img className="jj-drop__thumb" src={thumbnail} alt="" />
+      ) : (
+        <span className="jj-drop__icon" aria-hidden="true" />
+      )}
+      <span className="jj-drop__name">{file ? file.name : idle}</span>
+      {/* nothing under an empty zone — the accepted formats are already on the
+          file picker, and a line of extensions in every one of the four zones
+          was more noise than help */}
+      {file ? <span className="jj-drop__hint">click to swap</span> : null}
+      <input
+        id={`jj-${kind}`}
+        type="file"
+        disabled={busy}
+        accept={ASSETS[kind].accept}
+        onChange={(event) => onChoose(kind, event.target.files?.[0] ?? null)}
+        aria-invalid={invalid}
+        aria-describedby={invalid ? `jj-${kind}-error` : undefined}
+        aria-label={`Choose your ${ASSETS[kind].label}`}
+      />
+    </div>
+  );
+}
+
+/** Upload it, or paste a link to it — whichever the team has. */
+function FileOrLink({
+  kind,
+  file,
+  link,
+  busy,
+  invalid,
+  onChoose,
+  onLink,
+  idle,
+  placeholder,
+}: {
+  kind: Linkable;
+  file: File | null;
+  link: string;
+  busy: boolean;
+  invalid: boolean;
+  onChoose: (kind: AssetKind, file: File | null) => void;
+  onLink: (kind: Linkable, value: string) => void;
+  idle: string;
+  placeholder: string;
+}) {
+  return (
+    <div className="jj-either">
+      <Drop
+        kind={kind}
+        file={file}
+        busy={busy}
+        invalid={invalid && !link}
+        onChoose={onChoose}
+        idle={idle}
+      />
+      <span className="jj-either__or" aria-hidden="true">
+        or
+      </span>
+      <input
+        type="url"
+        inputMode="url"
+        disabled={busy}
+        placeholder={placeholder}
+        value={link}
+        onChange={(event) => onLink(kind, event.target.value)}
+        aria-invalid={invalid && !file}
+        aria-label={`Link to your ${ASSETS[kind].label}`}
+        className="jj-input jj-cut jj-cut--sm"
+      />
     </div>
   );
 }

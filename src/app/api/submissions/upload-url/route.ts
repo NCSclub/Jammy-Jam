@@ -2,32 +2,45 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
-  buildExtension,
-  MAX_BUILD_SIZE,
-  safeBuildName,
+  ASSETS,
+  assetExtension,
+  isAssetKind,
+  safeFileName,
   SUBMISSIONS_BUCKET,
 } from "@/lib/submissions";
 
+/**
+ * Hands the browser a one-shot upload URL for one attachment.
+ *
+ * `kind` decides which rules apply — the four attachments have very different
+ * ceilings, and a 500 MB cover screenshot is not a screenshot.
+ */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
+  const kind = body?.kind;
   const fileName = String(body?.fileName ?? "");
   const fileSize = Number(body?.fileSize ?? 0);
-  const extension = buildExtension(fileName);
 
-  if (!extension) {
+  if (!isAssetKind(kind)) {
+    return NextResponse.json({ error: "Unknown attachment." }, { status: 400 });
+  }
+
+  const spec = ASSETS[kind];
+
+  if (!assetExtension(kind, fileName)) {
     return NextResponse.json(
-      { error: "Upload a .zip, .rar, .7z or .exe build." },
+      { error: `Upload ${spec.extensions.join(", ")} for the ${spec.label}.` },
       { status: 400 },
     );
   }
-  if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX_BUILD_SIZE) {
+  if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > spec.maxSize) {
     return NextResponse.json(
-      { error: "The build must be smaller than 500 MB." },
+      { error: `That ${spec.label} is over the size limit.` },
       { status: 400 },
     );
   }
 
-  const path = `${new Date().getUTCFullYear()}/${randomUUID()}-${safeBuildName(fileName)}`;
+  const path = `${spec.folder}/${new Date().getUTCFullYear()}/${randomUUID()}-${safeFileName(fileName)}`;
   const { data, error } = await supabaseAdmin()
     .storage
     .from(SUBMISSIONS_BUCKET)
@@ -45,8 +58,5 @@ export async function POST(request: Request) {
   const uploadUrl = data.signedUrl.startsWith("http")
     ? data.signedUrl
     : `${baseUrl}${data.signedUrl}`;
-  return NextResponse.json({
-    path,
-    uploadUrl,
-  });
+  return NextResponse.json({ path, uploadUrl });
 }

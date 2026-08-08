@@ -7,12 +7,25 @@
 .jury-summary { display:flex; width:max-content; align-items:center; gap:1.2rem; margin:2rem 0; padding:.8rem 1rem; border:2px solid #655d88; background:#282343; }
 .jury-summary span { margin:0; }.jury-summary strong { color:#fcbf09; font:1.5rem var(--font-pixel),monospace; }
 .jury-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr)); gap:1.4rem; }
-.jury-card { position:relative; overflow:hidden; padding:1.5rem; border:3px solid #17152d; border-radius:4px 16px; color:#17152d; background:#fff8d9; box-shadow:5px 6px 0 #fcbf09; }
-.jury-card-number { position:absolute; top:-.5rem; right:.5rem; color:#e6dcb5; font:4rem var(--font-pixel),monospace; }
+.jury-card { position:relative; display:flex; flex-direction:column; overflow:hidden; border:3px solid #17152d; border-radius:4px 16px; color:#17152d; background:#fff8d9; box-shadow:5px 6px 0 #fcbf09; }
+.jury-card-body { position:relative; flex:1; display:flex; flex-direction:column; padding:1.5rem; }
+/* the team's cover, letterboxed on the dark ink so a portrait screenshot and a
+   widescreen one still line the grid up on the same card height */
+.jury-cover { display:block; width:100%; height:180px; object-fit:contain; border-bottom:3px solid #17152d; background:#17152d; }
+.jury-cover--missing { background:repeating-linear-gradient(45deg,#2a2545 0 12px,#17152d 12px 24px); }
+.jury-card-number { position:absolute; top:0; right:.5rem; color:#e6dcb5; font:4rem var(--font-pixel),monospace; }
 .jury-card h2 { position:relative; margin:.25rem 0 1rem; padding-right:3rem; font:1rem/1.45 var(--font-pixel),monospace; text-transform:uppercase; }
 .jury-description { min-height:3.5rem; font:1.3rem/1.1 var(--font-body),sans-serif; }
 .jury-controls { margin:1rem 0; padding:1rem; border-left:4px solid #813dc4; background:#eee0fa; }.jury-controls span{color:#65269d}.jury-controls p{margin:0;white-space:pre-wrap;font:1.15rem var(--font-body),sans-serif}
 .jury-card dl { display:grid; gap:.7rem; margin:1rem 0; font:1.05rem var(--font-body),sans-serif; }.jury-card dl div{min-width:0}.jury-card dt{color:#665d75}.jury-card dd{overflow-wrap:anywhere;margin:0}
+.jury-links { display:grid; gap:.6rem; margin-top:auto; }
 .jury-download { display:block; padding:.8rem; border:3px solid #17152d; color:#17152d; background:#fcbf09; text-align:center; font:.62rem var(--font-pixel),monospace; box-shadow:3px 3px #17152d; }.jury-download.disabled{opacity:.55}
+/* the two documents are secondary to the build — same shape, quieter fill */
+.jury-attachment { display:block; padding:.65rem; border:3px solid #17152d; color:#17152d; background:#eee0fa; text-align:center; font:.58rem var(--font-pixel),monospace; }
+.jury-attachment.disabled{opacity:.5}
+/* whatever else the team tacked on — long URLs, so they wrap anywhere */
+.jury-extra { margin:.9rem 0 0; padding:0; list-style:none; font:1.05rem var(--font-body),sans-serif; }
+.jury-extra li { overflow-wrap:anywhere; margin-top:.3rem; }
+.jury-extra a { color:#65269d; }
 .jury-empty { max-width:600px; margin:5rem auto; text-align:center; }.jury-empty h2{font:1.1rem var(--font-pixel),monospace}.jury-empty p{font:1.4rem var(--font-body),sans-serif;color:#c9c3db}
 @media(max-width:650px){.jury-topbar{align-items:start;flex-direction:column}.jury-topbar nav{font-size:1rem}}

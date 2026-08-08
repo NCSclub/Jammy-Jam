@@ -4,29 +4,48 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export const SUBMISSIONS_BUCKET = "game-submissions";
 
-/* Re-exported so the API routes keep importing the build rules from here,
+/* Re-exported so the API routes keep importing the upload rules from here,
    while the browser form imports the same values straight from the module
    below — which, unlike this one, is not server-only. */
 export {
-  ALLOWED_BUILD_EXTENSIONS,
-  buildExtension,
-  MAX_BUILD_SIZE,
-  safeBuildName,
+  ASSETS,
+  assetExtension,
+  isAssetKind,
+  isHttpUrl,
+  MAX_OTHER_LINKS,
+  safeFileName,
 } from "@/lib/submission-limits";
+export type { AssetKind } from "@/lib/submission-limits";
 
 export type GameSubmission = {
   id: string;
   created_at: string;
   team_name: string;
   game_title: string;
-  contact_email: string;
-  description: string;
-  controls: string;
   build_path: string;
   build_name: string;
   build_size: number;
+  cover_path: string;
+  cover_name: string;
+  cover_size: number;
+  /* Report and presentation are each either an upload or a link, never both. */
+  report_path: string | null;
+  report_name: string | null;
+  report_size: number | null;
+  report_url: string | null;
+  deck_path: string | null;
+  deck_name: string | null;
+  deck_size: number | null;
+  deck_url: string | null;
+  /** Optional extras the team tacked on: Figma, a demo video, a live build. */
+  other_links: string[];
+  notes: string | null;
   status: "submitted" | "reviewing" | "reviewed";
 };
+
+/** Ten minutes is long enough to start a 500 MB download, short enough that a
+    copied URL is not a permanent public link to an unreleased game. */
+const SIGNED_URL_TTL = 10 * 60;
 
 export async function listSubmissions() {
   const db = supabaseAdmin();
@@ -37,15 +56,31 @@ export async function listSubmissions() {
 
   if (error) throw error;
 
-  return Promise.all(
-    ((data ?? []) as GameSubmission[]).map(async (submission) => {
-      const { data: signed } = await db.storage
-        .from(SUBMISSIONS_BUCKET)
-        .createSignedUrl(submission.build_path, 10 * 60, {
-          download: submission.build_name,
-        });
+  const storage = db.storage.from(SUBMISSIONS_BUCKET);
 
-      return { ...submission, downloadUrl: signed?.signedUrl ?? null };
-    }),
+  /** A stored file becomes a signed URL; a pasted link is already one. */
+  async function resolve(path: string | null, name: string | null) {
+    if (!path) return null;
+    const { data: signed } = await storage.createSignedUrl(path, SIGNED_URL_TTL, {
+      download: name ?? undefined,
+    });
+    return signed?.signedUrl ?? null;
+  }
+
+  return Promise.all(
+    ((data ?? []) as GameSubmission[]).map(async (submission) => ({
+      ...submission,
+      buildUrl: await resolve(submission.build_path, submission.build_name),
+      /* inline, not a download — the jury page renders it as the card art */
+      coverUrl: (
+        await storage.createSignedUrl(submission.cover_path, SIGNED_URL_TTL)
+      ).data?.signedUrl ?? null,
+      reportUrl:
+        (await resolve(submission.report_path, submission.report_name)) ??
+        submission.report_url,
+      deckUrl:
+        (await resolve(submission.deck_path, submission.deck_name)) ??
+        submission.deck_url,
+    })),
   );
 }

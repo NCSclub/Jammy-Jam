@@ -2,11 +2,12 @@
    JAMMY JAM — game submission skin
 
    The board itself (frame, checker strip, labels, inputs, buttons, the done
-   panel) is the registration form's, imported by submission-form.tsx. Only the
-   two things that page has and the other does not live here: the build drop
-   zone and its upload meter. Both are built from the same tokens — the panel
-   wells, the grey frame, the gold and the cyan focus — so they read as parts
-   of the same cartridge rather than a widget bolted onto it.
+   panel) is the registration form's, imported by submission-form.tsx. Only
+   what this page has and the other does not lives here: the numbered steps,
+   the drop zones, the file-or-link pairing and the upload meter. All of it is
+   built from the same tokens — the panel wells, the grey frame, the gold and
+   the cyan focus — so it reads as part of the same cartridge rather than a
+   widget bolted onto it.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -47,6 +48,14 @@
 .jj-drop--filled {
   box-shadow:
     inset 0 0 0 3px var(--jj-gold-700),
+    inset 0 3px 0 3px rgba(0, 0, 0, 0.6);
+}
+
+/* same red slot as an invalid .jj-input, so the error copy under it is not the
+   only thing pointing at what went wrong */
+.jj-drop--invalid {
+  box-shadow:
+    inset 0 0 0 3px var(--jj-red),
     inset 0 3px 0 3px rgba(0, 0, 0, 0.6);
 }
 
@@ -113,8 +122,134 @@
   line-height: 1.3;
 }
 
+/* The cover screenshot shows itself once picked — it is the card art the jury
+   will see, so "did I attach the right one" should not need a second guess.
+   `contain`, not `cover`: a cropped preview would misrepresent the framing. */
+.jj-drop__thumb {
+  max-width: 100%;
+  max-height: 140px;
+  margin-bottom: 4px;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 3px var(--jj-gold-700);
+  image-rendering: pixelated;
+}
+
 /* --------------------------------------------------------------------------
-   Upload meter — appears only while a build is in flight
+   File-or-link — the report and the presentation take either one
+   -------------------------------------------------------------------------- */
+.jj-either {
+  display: grid;
+  gap: 10px;
+}
+
+/* These two zones are one of four on the page and only ever hold a document,
+   so they get a shorter well than the build and the cover. */
+.jj-either .jj-drop {
+  min-height: 112px;
+  padding: 20px 18px 18px;
+}
+
+/* "or" sitting on a rule across the full width — the two inputs are
+   alternatives, and stacking them without this reads as "fill in both" */
+.jj-either__or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--jj-ink-dim);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.jj-either__or::before,
+.jj-either__or::after {
+  flex: 1;
+  height: 3px;
+  background: rgba(154, 160, 184, 0.35);
+  content: "";
+}
+
+/* --------------------------------------------------------------------------
+   Other links — optional, so it starts as a bare button and grows a row at a
+   time. Nothing here is required, which is why there is no empty first input:
+   a waiting field reads as an unanswered question.
+   -------------------------------------------------------------------------- */
+.jj-extra {
+  display: grid;
+  gap: 10px;
+}
+
+/* the remove button is a fixed square; the input takes what is left */
+.jj-extra__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 8px;
+}
+
+.jj-extra__remove {
+  border: 0;
+  cursor: pointer;
+  color: var(--jj-ink);
+  background: var(--jj-slate);
+  box-shadow: inset 0 0 0 3px var(--jj-frame-dark);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 10px;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.jj-extra__remove:hover {
+  color: var(--jj-void);
+  background: var(--jj-red);
+  box-shadow: inset 0 0 0 3px var(--jj-ink);
+}
+
+/* clip-path eats an outline ring, so focus is drawn inside */
+.jj-extra__remove:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--jj-gold);
+}
+
+/* Quieter than a .jj-btn: this adds a field, it does not submit anything, and
+   a second chunky drop-shadowed button would compete with SUBMIT GAME. */
+.jj-extra__add {
+  justify-self: start;
+  padding: 12px 18px;
+  border: 0;
+  cursor: pointer;
+  color: var(--jj-gold);
+  background: rgba(255, 210, 63, 0.12);
+  box-shadow: inset 0 0 0 3px var(--jj-gold-700);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.jj-extra__add:hover {
+  color: var(--jj-void);
+  background: var(--jj-gold);
+}
+
+.jj-extra__add:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--jj-gold), inset 0 0 0 6px var(--jj-void);
+}
+
+.jj-extra__add:disabled,
+.jj-extra__remove:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* the helper line under the button — same treatment as the squad note */
+.jj-extra .jj-squad__note {
+  margin-top: 0;
+  padding-left: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Upload meter — appears only while something is in flight
    -------------------------------------------------------------------------- */
 .jj-progress-wrap {
   display: grid;
