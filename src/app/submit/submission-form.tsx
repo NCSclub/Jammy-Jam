@@ -87,7 +87,7 @@ function checkFile(kind: AssetKind, file: File | null) {
   /* The only place a size is ever spelled out. The zones stay quiet about the
      caps; you only hear about one when you have actually hit it. */
   if (file.size > ASSETS[kind].maxSize)
-    return `Too big — ${formatBytes(ASSETS[kind].maxSize)} max`;
+    return `Too big. ${formatBytes(ASSETS[kind].maxSize)} max`;
   return null;
 }
 
@@ -138,6 +138,8 @@ export default function SubmissionForm() {
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [progress, setProgress] = useState<Progress | null>(null);
+  /* Where this team's page now lives, handed back by the API on insert. */
+  const [slug, setSlug] = useState<string | null>(null);
 
   const busy = status === "sending";
 
@@ -233,7 +235,7 @@ export default function SubmissionForm() {
       }
 
       setProgress({ label: "submission", percent: 100, step: queue.length, total: queue.length });
-      await json(
+      const saved = await json(
         await fetch("/api/submissions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -251,6 +253,7 @@ export default function SubmissionForm() {
           }),
         }),
       );
+      setSlug(typeof saved?.slug === "string" ? saved.slug : null);
       setStatus("done");
     } catch (caught) {
       setStatus("idle");
@@ -304,15 +307,26 @@ export default function SubmissionForm() {
                   <span className="jj-done__coin" aria-hidden="true" />
                   <p className="jj-done text-sm sm:text-base">Game submitted!</p>
                   <p className="jj-hint max-w-sm">
-                    {gameTitle} is in, with everything attached. Good luck,
-                    player.
+                    {gameTitle} is in, with everything attached. Your team now
+                    has a page in the arcade, and it goes live for everyone when
+                    the jam ends. Good luck, player.
                   </p>
-                  <Link
-                    href="/"
-                    className="jj-btn jj-cut jj-cut--sm mt-2 inline-flex items-center justify-center"
-                  >
-                    Back to the event
-                  </Link>
+                  <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                    {slug ? (
+                      <Link
+                        href={`/games/${slug}`}
+                        className="jj-btn jj-cut jj-cut--sm inline-flex items-center justify-center"
+                      >
+                        See your page
+                      </Link>
+                    ) : null}
+                    <Link
+                      href="/"
+                      className="jj-btn jj-btn--ghost jj-cut jj-cut--sm inline-flex items-center justify-center"
+                    >
+                      Back to the event
+                    </Link>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -421,7 +435,7 @@ export default function SubmissionForm() {
                       name="notes"
                       rows={3}
                       maxLength={800}
-                      placeholder="Controls, known bugs, credits, a demo link — anything else we should know."
+                      placeholder="Controls, known bugs, credits, a demo link, anything else we should know."
                       value={notes}
                       onChange={(event) => {
                         setNotes(event.target.value);
@@ -472,7 +486,7 @@ export default function SubmissionForm() {
                       ) : null}
 
                       <p className="jj-squad__note">
-                        Anything else you want us to see — Figma, a demo video,
+                        Anything else you want us to see: Figma, a demo video,
                         a devlog, the live build.
                       </p>
                     </div>
@@ -496,7 +510,7 @@ export default function SubmissionForm() {
                       <p className="jj-progress__label">
                         {progress.label === "submission"
                           ? "Saving submission..."
-                          : `${progress.step}/${progress.total} — uploading ${progress.label} ${progress.percent}%`}
+                          : `${progress.step}/${progress.total} uploading ${progress.label} ${progress.percent}%`}
                       </p>
                     </div>
                   ) : null}

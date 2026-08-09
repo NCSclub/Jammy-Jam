@@ -1,0 +1,622 @@
+/* ==========================================================================
+   JAMMY JAM — the arcade
+
+   Two pages share this skin: the gallery grid at /games and a team's own page
+   at /games/<slug>. Both sit in the site's Green Hill world — sky at the top,
+   checkered soil under everything — and the cards use the same cream/navy/gold
+   sprite treatment as the jury room, so a game card reads as the same object
+   whether a visitor or a judge is looking at it.
+   ========================================================================== */
+
+.arcade {
+  --ink: #0c2249;
+  --gold: #ffd23f;
+  --gold-deep: #e0a417;
+  --cream: #fff8d9;
+  --soil-dark: #300401;
+  --soil-light: #7f3002;
+  --grass-lip: #8ae71a;
+  --grass: #4cae04;
+  --grass-deep: #1c6d08;
+
+  position: relative;
+  min-height: 100vh;
+  /* generous top gap: the title used to sit right under the address bar,
+     which made the page feel stuck to the browser rather than starting */
+  padding: clamp(3.5rem, 11vh, 8rem) clamp(1rem, 4vw, 3rem) 0;
+  color: var(--ink);
+  /* the pale bottom of the hero sky, so the area below the fixed gradient
+     layer blends into it instead of flashing white on a long page */
+  background: var(--color-sky-bottom, #c8e6fe);
+  font-family: var(--jj-font-body), ui-monospace, monospace;
+}
+
+/* The hero's sky, verbatim: sky-top -> sky-mid -> sky-bottom.
+   A fixed layer rather than `background-attachment: fixed` on the page — that
+   attachment drops the browser off its fast scroll path and repaints a
+   full-viewport gradient every frame, which is exactly the thing that made the
+   dashboard stick on a phone. A fixed element paints once and composites. */
+.arcade__sky {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    var(--color-sky-top, #2d54f0) 0%,
+    var(--color-sky-mid, #6db7f5) 52%,
+    var(--color-sky-bottom, #c8e6fe) 100%
+  );
+}
+
+/* The hero's cloud sprites, in a band across the top of the page rather than
+   the whole scroll: they belong around the title and the clock the way they
+   sit around the logo, and repeating them past that would fight the grid. */
+.arcade__clouds {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: clamp(420px, 78vh, 720px);
+  pointer-events: none;
+}
+
+/* Alive, not busy. Each cloud eases a short distance and comes back, on its
+   own long period and its own delay — the four never line up, so there is no
+   visible pulse. Scoped to .arcade__clouds so the homepage hero, where the
+   clouds are deliberately still behind the logo, is untouched.
+
+   `alternate` on a small offset rather than a long one-way pan: a cloud that
+   travels off-screen has to be tiled or teleported back, and both read worse
+   than one that simply breathes. It animates `transform` only, so the whole
+   thing lives on the compositor and never costs a repaint while scrolling. */
+.arcade__clouds img {
+  will-change: transform;
+  animation: arcade-cloud 64s ease-in-out infinite alternate;
+}
+
+.arcade__clouds img:nth-of-type(2) {
+  animation-duration: 87s;
+  animation-delay: -21s;
+}
+
+.arcade__clouds img:nth-of-type(3) {
+  animation-duration: 73s;
+  animation-delay: -44s;
+}
+
+.arcade__clouds img:nth-of-type(4) {
+  animation-duration: 96s;
+  animation-delay: -12s;
+}
+
+@keyframes arcade-cloud {
+  from { transform: translate3d(-16px, 0, 0); }
+  to { transform: translate3d(34px, -10px, 0); }
+}
+
+.arcade__inner {
+  position: relative;
+  z-index: 1;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding-bottom: clamp(4rem, 12vw, 8rem);
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+.arcade__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(1.75rem, 5vw, 3rem);
+}
+
+.arcade__back {
+  display: inline-block;
+  padding: 0.7rem 1rem;
+  color: #fff;
+  background: rgba(12, 34, 73, 0.55);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.arcade__back:hover { background: rgba(12, 34, 73, 0.8); }
+
+.arcade__title {
+  margin: 0;
+  color: var(--gold);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: clamp(2rem, 7vw, 4.25rem);
+  line-height: 1.35;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-shadow: 0 5px 0 var(--gold-deep), 0 10px 0 rgba(0, 0, 0, 0.55);
+}
+
+.arcade__title em {
+  font-style: normal;
+  color: #fff;
+  text-shadow: 0 5px 0 #5f6480, 0 10px 0 rgba(0, 0, 0, 0.55);
+}
+
+.arcade__lede {
+  max-width: 46ch;
+  margin: 1.9rem auto 0;
+  color: #eaf6ff;
+  font-size: clamp(1.5rem, 3.1vw, 2.05rem);
+  line-height: 1.35;
+  text-shadow: 0 2px 0 rgba(12, 34, 73, 0.55);
+}
+
+/* Everything in the header sits on the page's centre line. The clock and the
+   button are the two things a team is here for, so they belong on the axis the
+   eye already follows down from the title rather than ragged along the left. */
+.arcade__head {
+  margin-bottom: clamp(2rem, 6vw, 3.5rem);
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Deadline clock + submit button
+
+   These are the top of the page while the jam runs — the arcade and the
+   submission desk are one destination, so the clock is the first thing you
+   see and the button sits directly under it. Both retire once the deadline
+   passes and the games take over.
+   -------------------------------------------------------------------------- */
+.arcade__timer {
+  display: inline-block;
+  margin: 2.4rem 0 0;
+  padding: 1.3rem 1.6rem 1.1rem;
+  border: 4px solid var(--ink);
+  border-radius: 4px 14px 4px 14px;
+  background: rgba(12, 34, 73, 0.72);
+  box-shadow: 5px 6px 0 rgba(12, 34, 73, 0.45);
+}
+
+.arcade__timer-label {
+  margin: 0 0 1rem;
+  color: var(--gold);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arcade__clock {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.arcade__unit {
+  display: grid;
+  min-width: 5.2rem;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.6rem 0.6rem;
+  background: #17152d;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.14);
+}
+
+.arcade__unit span {
+  color: #fff;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: clamp(1.6rem, 5.6vw, 2.5rem);
+  line-height: 1;
+  /* the digits change every second — a fixed advance stops the box twitching */
+  font-variant-numeric: tabular-nums;
+}
+
+.arcade__unit small {
+  color: #9fb6d8;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.arcade__cta {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 1.8rem auto 0;
+  padding: 1.3rem 2.1rem;
+  border: 4px solid var(--ink);
+  border-radius: 4px 14px 4px 14px;
+  color: var(--ink);
+  background: var(--gold);
+  box-shadow: 5px 6px 0 var(--ink);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform 0.08s steps(2, end), box-shadow 0.08s steps(2, end);
+}
+
+.arcade__cta:hover { background: #ffe680; }
+
+.arcade__cta:active {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+/* what replaces the clock and the button once the deadline is behind us */
+.arcade__closed {
+  display: inline-block;
+  margin: 1.5rem 0 0;
+  padding: 0.8rem 1.1rem;
+  border: 4px solid var(--ink);
+  background: rgba(12, 34, 73, 0.72);
+  color: #ff8ba7;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   The grid
+   -------------------------------------------------------------------------- */
+.arcade__grid {
+  display: grid;
+  gap: clamp(1.1rem, 3vw, 1.75rem);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.game-card {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  flex-direction: column;
+  border: 4px solid var(--ink);
+  border-radius: 4px 18px 4px 18px;
+  background: var(--cream);
+  box-shadow: 6px 7px 0 var(--gold), 6px 7px 0 4px var(--ink);
+  transition: transform 0.1s steps(2, end), box-shadow 0.1s steps(2, end);
+}
+
+/* lifts toward the light, the same press-and-release the buttons use */
+.game-card:hover,
+.game-card:focus-visible {
+  outline: none;
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 10px 0 var(--gold), 9px 10px 0 4px var(--ink);
+}
+
+/* `contain` on ink, not `cover`: a jam produces portrait, square and
+   widescreen captures, and cropping them all to a letterbox throws away the
+   part of the screenshot the team chose to show. */
+.game-card__cover {
+  display: block;
+  width: 100%;
+  height: 172px;
+  border-bottom: 4px solid var(--ink);
+  object-fit: contain;
+  background: #17152d;
+  image-rendering: pixelated;
+}
+
+.game-card__cover--missing {
+  background: repeating-linear-gradient(45deg, #2a2545 0 14px, #17152d 14px 28px);
+}
+
+.game-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.game-card__team {
+  margin: 0 0 0.55rem;
+  color: #7f3002;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.game-card__title {
+  margin: 0 0 0.9rem;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.game-card__cta {
+  display: block;
+  margin-top: auto;
+  padding: 0.75rem;
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  background: var(--gold);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.game-card:hover .game-card__cta { background: #fff; }
+
+/* --------------------------------------------------------------------------
+   Locked arcade, and the empty state
+   -------------------------------------------------------------------------- */
+.arcade__panel {
+  width: min(660px, 100%);
+  margin: clamp(2rem, 8vw, 5rem) auto;
+  padding: clamp(1.75rem, 6vw, 3rem);
+  border: 4px solid var(--ink);
+  border-radius: 4px 18px 4px 18px;
+  background: var(--cream);
+  box-shadow: 8px 9px 0 var(--gold), 8px 9px 0 4px var(--ink);
+  text-align: center;
+}
+
+.arcade__panel h2 {
+  margin: 0 0 1rem;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: clamp(1.05rem, 4vw, 1.6rem);
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.arcade__panel p {
+  margin: 0 auto;
+  max-width: 44ch;
+  font-size: 1.55rem;
+  line-height: 1.35;
+}
+
+/* the countdown to the doors opening */
+.arcade__clock {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1.5rem 0 0.5rem;
+  color: #17152d;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: clamp(1.1rem, 5vw, 2rem);
+}
+
+.arcade__clock span {
+  padding: 0.4rem 0.5rem;
+  background: #17152d;
+  color: var(--gold);
+}
+
+.arcade__clock em { font-style: normal; align-self: center; }
+
+.arcade__tally {
+  margin-top: 1.9rem;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.arcade__tally strong {
+  font-size: 2.5rem;
+  color: #7f3002;
+}
+
+/* --------------------------------------------------------------------------
+   One team's page
+   -------------------------------------------------------------------------- */
+.game {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  align-items: start;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+
+@media (max-width: 860px) {
+  .game { grid-template-columns: minmax(0, 1fr); }
+}
+
+.game__shot {
+  overflow: hidden;
+  border: 4px solid var(--ink);
+  border-radius: 4px 18px 4px 18px;
+  background: #17152d;
+  box-shadow: 8px 9px 0 var(--gold), 8px 9px 0 4px var(--ink);
+}
+
+.game__shot img {
+  display: block;
+  width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.game__panel {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 4px solid var(--ink);
+  border-radius: 4px 18px 4px 18px;
+  background: var(--cream);
+  box-shadow: 8px 9px 0 var(--gold), 8px 9px 0 4px var(--ink);
+}
+
+.game__team {
+  margin: 0 0 0.6rem;
+  color: #7f3002;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.game__title {
+  margin: 0;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: clamp(1.1rem, 4.2vw, 1.7rem);
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.game__notes {
+  margin: 1.25rem 0 0;
+  padding: 1rem 1.1rem;
+  border-left: 5px solid #813dc4;
+  background: #f1e6fb;
+  font-size: 1.5rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.game__download {
+  display: block;
+  margin-top: 1.5rem;
+  padding: 1.1rem 1rem;
+  border: 4px solid var(--ink);
+  color: var(--ink);
+  background: var(--gold);
+  box-shadow: 5px 5px 0 var(--ink);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  transition: transform 0.08s steps(2, end), box-shadow 0.08s steps(2, end);
+}
+
+.game__download:hover { background: #ffe680; }
+
+.game__download:active {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.game__download.is-off {
+  background: #d7cfae;
+  box-shadow: 5px 5px 0 rgba(12, 34, 73, 0.4);
+  cursor: not-allowed;
+}
+
+.game__meta {
+  margin: 0.7rem 0 0;
+  font-size: 1.35rem;
+  text-align: center;
+  color: #5c4d74;
+}
+
+.game__links {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game__links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.75rem 0.9rem;
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  background: #eee0fa;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.game__links a:hover { background: #fff; }
+.game__links span:last-child { flex: none; }
+
+.game__section-title {
+  margin: 1.75rem 0 0.75rem;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5c4d74;
+}
+
+/* --------------------------------------------------------------------------
+   Green Hill floor, pinned under the page
+   -------------------------------------------------------------------------- */
+.arcade__ground {
+  position: relative;
+  z-index: 1;
+  height: 132px;
+  margin: 0 calc(-1 * clamp(1rem, 4vw, 3rem));
+  background-image:
+    /* blades breaking the top edge so it is not a flat line */
+    linear-gradient(90deg,
+      transparent 0 15.6%, var(--grass-lip) 15.6% 34.4%,
+      transparent 34.4% 59.4%, var(--grass-lip) 59.4% 71.9%,
+      transparent 71.9% 87.5%, var(--grass-lip) 87.5% 100%),
+    linear-gradient(var(--grass-lip) 0 0),
+    linear-gradient(var(--grass) 0 0),
+    linear-gradient(var(--grass-deep) 0 0),
+    repeating-conic-gradient(var(--soil-light) 0% 25%, var(--soil-dark) 0% 50%);
+  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat, repeat;
+  background-size:
+    32px 8px,
+    100% 9px,
+    100% 34px,
+    100% 44px,
+    70px 70px;
+  background-position: 0 0, 0 8px, 0 8px, 0 8px, 0 52px;
+}
+
+@media (max-width: 520px) {
+  .arcade__ground {
+    height: 96px;
+    background-size: 26px 6px, 100% 7px, 100% 24px, 100% 32px, 44px 44px;
+    background-position: 0 0, 0 6px, 0 6px, 0 6px, 0 38px;
+  }
+}
+
+/* The four clock boxes at their full size come to roughly 420px, which is
+   wider than a phone. Below this the units stop reserving a minimum and share
+   the row evenly instead, so the box shrinks with the screen rather than
+   pushing the page sideways. */
+@media (max-width: 560px) {
+  .arcade__timer {
+    display: block;
+    padding: 1rem 0.9rem 0.85rem;
+  }
+
+  .arcade__clock { gap: 0.4rem; }
+
+  .arcade__unit {
+    flex: 1;
+    min-width: 0;
+    padding: 0.6rem 0.3rem 0.5rem;
+  }
+
+  .arcade__unit small { font-size: 0.5rem; }
+
+  .arcade__cta {
+    width: 100%;
+    padding: 1.1rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcade__clouds img { animation: none; }
+
+  .game-card,
+  .arcade__cta,
+  .game__download { transition: none; }
+}

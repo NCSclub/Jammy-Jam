@@ -23,7 +23,32 @@ export function isRegistrationOpen(now: Date = new Date()) {
 
 /** e.g. "6 August 2026 at 20:00" — for the closed notice. */
 export function formatDeadline() {
-  return REGISTRATION_CLOSES_AT.toLocaleString("en-GB", {
+  return formatMoment(REGISTRATION_CLOSES_AT);
+}
+
+/**
+ * When the public game gallery at /games unlocks.
+ *
+ * 👉 To open the arcade right now, set this to a date in the past.
+ *
+ * It is deliberately the submission deadline: while the jam is running, a team
+ * that opens /games sees a countdown and a head-count, not everyone else's
+ * game. The moment it passes, every entry appears at once. Judged by the
+ * server clock in `isGalleryOpen()`, so nobody peeks early by moving their own.
+ */
+export const GALLERY_OPENS_AT = new Date("2026-08-14T20:00:00+01:00");
+
+export function isGalleryOpen(now: Date = new Date()) {
+  return now >= GALLERY_OPENS_AT;
+}
+
+/** e.g. "14 August 2026 at 20:00" — for the locked arcade notice. */
+export function formatGalleryOpening() {
+  return formatMoment(GALLERY_OPENS_AT);
+}
+
+function formatMoment(date: Date) {
+  return date.toLocaleString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -49,6 +74,7 @@ export const siteConfig = {
         { label: "Home", href: "#home" },
         { label: "About", href: "#about" },
         { label: "Schedule", href: "#schedule" },
+        { label: "Games", href: "/games" },
         { label: "Contact", href: "#contact" },
     ],
 } as const;

@@ -1,0 +1,39 @@
+/* TEMPORARY — the only thing the preview adds to the real arcade skin is a
+   banner saying it is not real, plus the phase switch on it.
+   Delete with the rest of src/app/games/preview/. */
+.preview-flag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  padding: 0.7rem 1rem;
+  border: 3px dashed #ffd23f;
+  background: rgba(12, 34, 73, 0.6);
+  color: #ffd23f;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.55rem;
+  line-height: 1.7;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.preview-flag__switch {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.preview-flag__switch a {
+  padding: 0.45rem 0.6rem;
+  border: 2px solid rgba(255, 210, 63, 0.5);
+  color: #ffd23f;
+}
+
+.preview-flag__switch a:hover { background: rgba(255, 210, 63, 0.16); }
+
+.preview-flag__switch a.is-on {
+  color: #17152d;
+  background: #ffd23f;
+  border-color: #ffd23f;
+}

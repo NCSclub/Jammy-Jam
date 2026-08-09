@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase";
+import { slugify } from "@/lib/slug";
 import {
   ASSETS,
   type AssetKind,
@@ -27,6 +29,32 @@ function invalidAttachment(kind: AssetKind, file: Attachment | null) {
   if (!file.path.startsWith(`${ASSETS[kind].folder}/`)) return true;
   if (!assetExtension(kind, file.name)) return true;
   return file.size > ASSETS[kind].maxSize;
+}
+
+/**
+ * The team's page lives at /games/<slug>, so it has to be unique. Two teams
+ * called "Chaos" get chaos and chaos-2 rather than one of them 404ing.
+ *
+ * Checked then inserted, so there is a theoretical race between the two — the
+ * unique index on the column is the real guarantee, and the retry below is
+ * what turns losing that race into a different slug instead of a 500.
+ */
+async function uniqueSlug(db: SupabaseClient, teamName: string) {
+  const base = slugify(teamName);
+
+  for (let attempt = 1; attempt <= 25; attempt += 1) {
+    const candidate = attempt === 1 ? base : `${base}-${attempt}`;
+    const { data } = await db
+      .from("game_submissions")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+    if (!data) return candidate;
+  }
+
+  /* 25 teams with the same name is not a thing that happens, but a submission
+     must never fail because of one. */
+  return `${base}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export async function POST(request: Request) {
@@ -131,7 +159,10 @@ export async function POST(request: Request) {
     }
   }
 
+  const slug = await uniqueSlug(db, teamName);
+
   const { error } = await db.from("game_submissions").insert({
+    slug,
     team_name: teamName,
     game_title: gameTitle,
     build_path: build!.path,
@@ -157,5 +188,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not save the submission." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  /* The form links straight to the team's new page from the success panel. */
+  return NextResponse.json({ ok: true, slug });
 }
