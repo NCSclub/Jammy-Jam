@@ -13,11 +13,6 @@
   --gold: #ffd23f;
   --gold-deep: #e0a417;
   --cream: #fff8d9;
-  --soil-dark: #300401;
-  --soil-light: #7f3002;
-  --grass-lip: #8ae71a;
-  --grass: #4cae04;
-  --grass-deep: #1c6d08;
 
   position: relative;
   min-height: 100vh;
@@ -92,8 +87,8 @@
 }
 
 @keyframes arcade-cloud {
-  from { transform: translate3d(-16px, 0, 0); }
-  to { transform: translate3d(34px, -10px, 0); }
+  from { transform: translate3d(-45px, 4px, 0); }
+  to { transform: translate3d(95px, -16px, 0); }
 }
 
 .arcade__inner {
@@ -101,7 +96,9 @@
   z-index: 1;
   width: min(1180px, 100%);
   margin: 0 auto;
-  padding-bottom: clamp(4rem, 12vw, 8rem);
+  /* the only thing between the last card and the grass, so it is what decides
+     how high the ground sits on the page */
+  padding-bottom: clamp(2rem, 5vw, 3.5rem);
 }
 
 /* --------------------------------------------------------------------------
@@ -553,64 +550,35 @@
 /* --------------------------------------------------------------------------
    Green Hill floor, pinned under the page
    -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   Green Hill ground
+
+   The artwork itself, not a CSS reconstruction of it: sections/ground-strip.png
+   is a 548x98 slice of sections/about/ground.png taken from the stretch with no
+   sprites on it (no palm, no Sonic, no rings, no flower) — the grass, then the
+   block row of checkered soil under it and the start of the next one. Both cuts
+   are deliberate: the top drops the tallest blade tips so the grass reads as a
+   band rather than a fringe, and the bottom stops well above the strip's orange
+   band, which belongs to a section with more dirt under it, not to a floor
+   closing off a page. 548px is the art's own horizontal period there, verified
+   pixel-for-pixel against the columns that follow it, so repeat-x has no seam.
+
+   Scale is the point of `--ground-h`: the About section draws the same sprite
+   full-bleed at 100% width, i.e. at viewport/1744. 98/1744 = 5.62vw keeps this
+   floor's grass and checker exactly the size they are in that section, so the
+   two read as one world. The clamp only stops it from disappearing on a phone
+   or swallowing an ultrawide.
+   -------------------------------------------------------------------------- */
 .arcade__ground {
+  --ground-h: clamp(54px, 5.62vw, 124px);
+
   position: relative;
   z-index: 1;
-  height: 132px;
+  height: var(--ground-h);
   margin: 0 calc(-1 * clamp(1rem, 4vw, 3rem));
-  background-image:
-    /* blades breaking the top edge so it is not a flat line */
-    linear-gradient(90deg,
-      transparent 0 15.6%, var(--grass-lip) 15.6% 34.4%,
-      transparent 34.4% 59.4%, var(--grass-lip) 59.4% 71.9%,
-      transparent 71.9% 87.5%, var(--grass-lip) 87.5% 100%),
-    linear-gradient(var(--grass-lip) 0 0),
-    linear-gradient(var(--grass) 0 0),
-    linear-gradient(var(--grass-deep) 0 0),
-    repeating-conic-gradient(var(--soil-light) 0% 25%, var(--soil-dark) 0% 50%);
-  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat, repeat;
-  background-size:
-    32px 8px,
-    100% 9px,
-    100% 34px,
-    100% 44px,
-    70px 70px;
-  background-position: 0 0, 0 8px, 0 8px, 0 8px, 0 52px;
-}
-
-@media (max-width: 520px) {
-  .arcade__ground {
-    height: 96px;
-    background-size: 26px 6px, 100% 7px, 100% 24px, 100% 32px, 44px 44px;
-    background-position: 0 0, 0 6px, 0 6px, 0 6px, 0 38px;
-  }
-}
-
-/* The four clock boxes at their full size come to roughly 420px, which is
-   wider than a phone. Below this the units stop reserving a minimum and share
-   the row evenly instead, so the box shrinks with the screen rather than
-   pushing the page sideways. */
-@media (max-width: 560px) {
-  .arcade__timer {
-    display: block;
-    padding: 1rem 0.9rem 0.85rem;
-  }
-
-  .arcade__clock { gap: 0.4rem; }
-
-  .arcade__unit {
-    flex: 1;
-    min-width: 0;
-    padding: 0.6rem 0.3rem 0.5rem;
-  }
-
-  .arcade__unit small { font-size: 0.5rem; }
-
-  .arcade__cta {
-    width: 100%;
-    padding: 1.1rem 1rem;
-    font-size: 0.85rem;
-  }
+  background: url("/sections/ground-strip.png") repeat-x left top;
+  background-size: auto var(--ground-h);
+  image-rendering: pixelated;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -7,7 +7,9 @@
  */
 
 // Example: "2026-09-15T09:00:00+01:00" -> Sept 15, 2026, 9:00 AM (UTC+1)
-export const EVENT_DATE_ISO = "2026-08-06T20:00:00+01:00";
+// The home page counts down to the same moment the jam ends and the arcade
+// unlocks, so it stays in step with GALLERY_OPENS_AT below.
+export const EVENT_DATE_ISO = "2026-08-14T10:00:00+01:00";
 
 /**
  * When sign-ups shut: 6 August 2026 at 20:00 Algeria time (UTC+1, no DST).
@@ -36,13 +38,13 @@ export function formatDeadline() {
  * game. The moment it passes, every entry appears at once. Judged by the
  * server clock in `isGalleryOpen()`, so nobody peeks early by moving their own.
  */
-export const GALLERY_OPENS_AT = new Date("2026-08-14T20:00:00+01:00");
+export const GALLERY_OPENS_AT = new Date("2026-08-14T10:00:00+01:00");
 
 export function isGalleryOpen(now: Date = new Date()) {
   return now >= GALLERY_OPENS_AT;
 }
 
-/** e.g. "14 August 2026 at 20:00" — for the locked arcade notice. */
+/** e.g. "14 August 2026 at 10:00" — for the locked arcade notice. */
 export function formatGalleryOpening() {
   return formatMoment(GALLERY_OPENS_AT);
 }

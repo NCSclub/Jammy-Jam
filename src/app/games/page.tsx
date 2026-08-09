@@ -53,7 +53,7 @@ export default async function GamesPage() {
       ) : !open ? (
         <ArcadeNotice title="The shelf is still locked">
           Every game appears here the moment the clock hits zero, on{" "}
-          {formatGalleryOpening()} (Algiers time). Everyone at once, nobody early.
+          {formatGalleryOpening()}.
         </ArcadeNotice>
       ) : games.length === 0 ? (
         <ArcadeNotice title="Nothing on the shelf">
