@@ -61,13 +61,23 @@ export function ArcadeShell({
         {/* the site's own runner, standing on the grass the way he does in the
             About section — the strip he stands on was cut from around him */}
         {sonic ? (
-          <Image
-            className="arcade__sonic"
-            src="/sonic-emerald.png"
-            alt=""
-            width={185}
-            height={182}
-          />
+          <>
+            <Image
+              className="arcade__sonic"
+              src="/sonic-emerald.png"
+              alt=""
+              width={185}
+              height={182}
+            />
+            {/* Shadow on the far side, looking back at him across the page */}
+            <Image
+              className="arcade__shadow"
+              src="/shadow.png"
+              alt=""
+              width={143}
+              height={192}
+            />
+          </>
         ) : null}
       </div>
     </main>

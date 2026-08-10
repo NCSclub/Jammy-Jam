@@ -903,9 +903,29 @@
   to { transform: translateY(-4px); }
 }
 
+/* Shadow, standing at the other end of the same grass. Drawn as-is: the sprite
+   already faces left and Sonic's faces right, so the two of them look at each
+   other across the page with no mirroring — flipping him turned him away.
+   Slower, offset bob so the pair never moves in lockstep. */
+.arcade__shadow {
+  position: absolute;
+  bottom: 88%;
+  right: clamp(0.75rem, 7vw, 8rem);
+  width: auto;
+  height: clamp(74px, 8.4vw, 158px);
+  image-rendering: pixelated;
+  animation: arcade-shadow-idle 3.4s steps(2, end) -1.2s infinite alternate;
+}
+
+@keyframes arcade-shadow-idle {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .arcade__clouds img,
-  .arcade__sonic { animation: none; }
+  .arcade__sonic,
+  .arcade__shadow { animation: none; }
 
   /* the note keeps its tilt, it just stops swaying */
   .arcade__note {
