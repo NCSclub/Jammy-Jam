@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import { countGames, listGames } from "@/lib/gallery";
-import {
-  canSeeGames,
-  formatGalleryOpening,
-  isGalleryOpen,
-} from "@/config/site";
+import { canSeeGames, isGalleryOpen } from "@/config/site";
 import {
   ArcadeGrid,
   ArcadeLockedShelf,
@@ -58,7 +54,7 @@ export default async function ShelfPage() {
           They could not be loaded. Try again in a moment.
         </ArcadeNotice>
       ) : !open ? (
-        <ArcadeLockedShelf count={count} opensAt={formatGalleryOpening()} />
+        <ArcadeLockedShelf count={count} />
       ) : games.length === 0 ? (
         <ArcadeNotice title="Nothing here yet">
           {/* An empty open shelf means two different things depending on which

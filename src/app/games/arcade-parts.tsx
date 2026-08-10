@@ -241,13 +241,7 @@ function Notes({ text }: { text: string | null }) {
  * and the count is the only fact that crosses the line (it already did: the
  * header has been showing it all jam).
  */
-export function ArcadeLockedShelf({
-  count,
-  opensAt,
-}: {
-  count: number;
-  opensAt: string;
-}) {
+export function ArcadeLockedShelf({ count }: { count: number }) {
   /* enough tiles to read as a full shelf while the jam is still quiet, and
      never so many that the note floats in the middle of an empty page */
   const tiles = Math.min(Math.max(count, 6), 9);
@@ -275,9 +269,7 @@ export function ArcadeLockedShelf({
         <div className="arcade__note" role="status">
           <span className="arcade__note-tape" aria-hidden="true" />
           <h2>The shelf is still locked</h2>
-          <p>
-            Every game appears here the moment the clock hits zero, on {opensAt}.
-          </p>
+          <p>Every game appears here once submissions are over.</p>
         </div>
       </div>
     </div>

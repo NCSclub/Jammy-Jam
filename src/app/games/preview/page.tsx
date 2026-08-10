@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GALLERY_OPENS_AT, formatGalleryOpening } from "@/config/site";
+import { GALLERY_OPENS_AT } from "@/config/site";
 import {
   ArcadeGrid,
   ArcadeHeader,
@@ -50,10 +50,7 @@ export default async function ArcadePreview({ searchParams }: Props) {
       {closed ? (
         <ArcadeGrid games={games} />
       ) : (
-        <ArcadeLockedShelf
-          count={games.length}
-          opensAt={formatGalleryOpening()}
-        />
+        <ArcadeLockedShelf count={games.length} />
       )}
     </ArcadeShell>
   );
