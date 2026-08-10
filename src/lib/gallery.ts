@@ -18,29 +18,30 @@ import { SUBMISSIONS_BUCKET, type GameSubmission } from "@/lib/submissions";
 /** Long enough to read a page and start a 500 MB download without it dying. */
 const SIGNED_TTL = 60 * 60;
 
+/* The shelf is the whole gallery now: a card carries the cover, the write-up
+   and the build itself, so the columns a card needs are the columns a page
+   used to. Deliberately still explicit — no `*`, no report, no deck, no
+   other_links: what the shelf cannot select, the shelf cannot leak. */
 const CARD_COLUMNS =
-  "id, slug, team_name, game_title, cover_path, build_size, created_at";
+  "id, slug, team_name, game_title, notes, cover_path, build_path, build_name, build_size, created_at";
 
 export type GameCard = {
   id: string;
   slug: string;
   team_name: string;
   game_title: string;
+  notes: string | null;
   build_size: number;
   created_at: string;
   coverUrl: string | null;
+  buildName: string;
+  downloadHref: string | null;
 };
 
-export type GamePage = GameCard & {
-  notes: string | null;
-  other_links: string[];
-  buildName: string;
-  buildUrl: string | null;
-  reportUrl: string | null;
-  reportIsFile: boolean;
-  deckUrl: string | null;
-  deckIsFile: boolean;
-};
+/* Nothing beyond a card: the report, the deck and a team's own links are jury
+   material, and a public page for one game is the shelf's card at full size,
+   not a fuller version of it. The jury room reads its own rows for those. */
+export type GamePage = GameCard;
 
 function storage() {
   return supabaseAdmin().storage.from(SUBMISSIONS_BUCKET);
@@ -55,7 +56,7 @@ async function signed(path: string | null, downloadAs?: string | null) {
   return data?.signedUrl ?? null;
 }
 
-/** Every entry, newest first, with cover art. */
+/** Every entry, newest first, with its cover art and a live download link. */
 export async function listGames(): Promise<GameCard[]> {
   const { data, error } = await supabaseAdmin()
     .from("game_submissions")
@@ -64,12 +65,23 @@ export async function listGames(): Promise<GameCard[]> {
 
   if (error) throw error;
 
+  type Row = Omit<GameCard, "coverUrl" | "buildName" | "downloadHref"> & {
+    cover_path: string | null;
+    build_path: string | null;
+    build_name: string;
+  };
+
+  /* Two signatures per card, all of them in flight at once: ten teams is
+     twenty round trips, and doing them in sequence is what would be felt. */
   return Promise.all(
-    ((data ?? []) as (GameCard & { cover_path: string })[]).map(
-      async ({ cover_path, ...card }) => ({
-        ...card,
-        coverUrl: await signed(cover_path),
-      }),
+    ((data ?? []) as Row[]).map(
+      async ({ cover_path, build_path, build_name, ...card }) => {
+        const [coverUrl, downloadHref] = await Promise.all([
+          signed(cover_path),
+          signed(build_path, build_name),
+        ]);
+        return { ...card, coverUrl, buildName: build_name, downloadHref };
+      },
     ),
   );
 }
@@ -86,16 +98,23 @@ export async function countGames() {
 
 /** One team's page, or null if that slug is not a game. */
 export async function getGame(slug: string): Promise<GamePage | null> {
+  /* the card's columns, not `*`: the row also holds the report, the deck and
+     the team's own links, and none of that belongs on a public page */
   const { data, error } = await supabaseAdmin()
     .from("game_submissions")
-    .select("*")
+    .select(CARD_COLUMNS)
     .eq("slug", slug)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
 
-  const row = data as GameSubmission & { slug: string };
+  const row = data as unknown as GameSubmission & { slug: string };
+
+  const [coverUrl, downloadHref] = await Promise.all([
+    signed(row.cover_path),
+    signed(row.build_path, row.build_name),
+  ]);
 
   return {
     id: row.id,
@@ -105,16 +124,9 @@ export async function getGame(slug: string): Promise<GamePage | null> {
     build_size: row.build_size,
     created_at: row.created_at,
     notes: row.notes,
-    other_links: row.other_links ?? [],
-    /* inline for the hero image, attachment for the download button */
-    coverUrl: await signed(row.cover_path),
+    coverUrl,
     buildName: row.build_name,
-    buildUrl: await signed(row.build_path, row.build_name),
-    reportUrl:
-      (await signed(row.report_path, row.report_name)) ?? row.report_url,
-    reportIsFile: Boolean(row.report_path),
-    deckUrl: (await signed(row.deck_path, row.deck_name)) ?? row.deck_url,
-    deckIsFile: Boolean(row.deck_path),
+    downloadHref,
   };
 }
 

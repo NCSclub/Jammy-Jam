@@ -1,0 +1,67 @@
+import type { Metadata } from "next";
+import { countGames, listGames } from "@/lib/gallery";
+import { canSeeGames, formatGalleryOpening } from "@/config/site";
+import {
+  ArcadeGrid,
+  ArcadeLockedShelf,
+  ArcadeNotice,
+  ArcadeShell,
+  ShelfHeader,
+} from "../arcade-parts";
+
+export const metadata: Metadata = {
+  title: "Other Games | Jammy Jam",
+  description: "Every game built at Jammy Jam. Play them all.",
+};
+
+/* Download links are signed per request and expire, so this page can never be
+   cached — a cached copy would hand out dead URLs. */
+export const dynamic = "force-dynamic";
+
+/**
+ * The library: everyone's games, open to anyone with the address.
+ *
+ * Split off /games on purpose. That page is the clock and the hand-in, this one
+ * is the shelf, and a team mid-submission should not have to scroll past
+ * everyone else's work to reach the button.
+ */
+export default async function ShelfPage() {
+  const open = canSeeGames();
+
+  /* Before the deadline only the head-count crosses the line: no titles, no
+     covers, no team names. Nothing a team could scout mid-jam. */
+  let games: Awaited<ReturnType<typeof listGames>> = [];
+  let count = 0;
+  let failed = false;
+
+  try {
+    if (open) {
+      games = await listGames();
+      count = games.length;
+    } else {
+      count = await countGames();
+    }
+  } catch {
+    failed = true;
+  }
+
+  return (
+    <ArcadeShell>
+      <ShelfHeader open={open} count={count} />
+
+      {failed ? (
+        <ArcadeNotice title="The games are offline">
+          They could not be loaded. Try again in a moment.
+        </ArcadeNotice>
+      ) : !open ? (
+        <ArcadeLockedShelf count={count} opensAt={formatGalleryOpening()} />
+      ) : games.length === 0 ? (
+        <ArcadeNotice title="Nothing here yet">
+          No games were submitted before the deadline.
+        </ArcadeNotice>
+      ) : (
+        <ArcadeGrid games={games} />
+      )}
+    </ArcadeShell>
+  );
+}

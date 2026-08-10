@@ -26,6 +26,36 @@
   font-family: var(--jj-font-body), ui-monospace, monospace;
 }
 
+/* The arcade as wallpaper: fixed to the viewport, blurred, no content column.
+   `scale` is not decoration — a blur samples past the element's edges, so an
+   unscaled backdrop leaves a soft, lighter rim down all four sides. Growing it
+   a few percent pushes that rim off-screen.
+
+   The blur also makes this a containing block for `position: fixed`, which is
+   exactly what is wanted here: .arcade__sky pins to the backdrop, not to the
+   page it is sitting behind. */
+.arcade--backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  transform: scale(1.06);
+  filter: blur(7px);
+  pointer-events: none;
+}
+
+.arcade--backdrop .arcade__clouds { height: 62%; }
+
+.arcade--backdrop .arcade__ground {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+}
+
 /* The hero's sky, verbatim: sky-top -> sky-mid -> sky-bottom.
    A fixed layer rather than `background-attachment: fixed` on the page — that
    attachment drops the browser off its fast scroll path and repaints a
@@ -96,9 +126,10 @@
   z-index: 1;
   width: min(1180px, 100%);
   margin: 0 auto;
-  /* the only thing between the last card and the grass, so it is what decides
-     how high the ground sits on the page */
-  padding-bottom: clamp(2rem, 5vw, 3.5rem);
+  /* the only thing between the last thing on the page and the grass, so it is
+     what decides how high the ground sits — generous on purpose, the tally used
+     to sit almost on the blades */
+  padding-bottom: clamp(4.5rem, 11vw, 8rem);
 }
 
 /* --------------------------------------------------------------------------
@@ -245,6 +276,20 @@
   box-shadow: 2px 3px 0 var(--ink);
 }
 
+/* The way through to the shelf. Same shape and press as the submit button so
+   the two read as a pair, in cream rather than gold: while the jam runs the
+   hand-in is the errand and the shelf is the detour. Once submissions close it
+   is the only button left, and the header hands it the gold. */
+.arcade__cta--shelf {
+  margin-top: 0.9rem;
+  background: var(--cream);
+}
+
+.arcade__cta--shelf:hover { background: #fff; }
+
+.arcade__head--closed .arcade__cta--shelf { background: var(--gold); }
+.arcade__head--closed .arcade__cta--shelf:hover { background: #ffe680; }
+
 /* what replaces the clock and the button once the deadline is behind us */
 .arcade__closed {
   display: inline-block;
@@ -262,13 +307,25 @@
 /* --------------------------------------------------------------------------
    The grid
    -------------------------------------------------------------------------- */
+/* Three to a row, stated rather than derived: `auto-fill` would drop to two
+   fat cards on a laptop and leave the shelf looking half-stocked. minmax(0,1fr)
+   rather than 1fr so a long build filename cannot push a column wider than its
+   share. */
 .arcade__grid {
   display: grid;
   gap: clamp(1.1rem, 3vw, 1.75rem);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+@media (max-width: 980px) {
+  .arcade__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .arcade__grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 .game-card {
@@ -283,10 +340,9 @@
   transition: transform 0.1s steps(2, end), box-shadow 0.1s steps(2, end);
 }
 
-/* lifts toward the light, the same press-and-release the buttons use */
+/* lifts toward the light when a visitor is reading it */
 .game-card:hover,
-.game-card:focus-visible {
-  outline: none;
+.game-card:focus-within {
   transform: translate(-3px, -3px);
   box-shadow: 9px 10px 0 var(--gold), 9px 10px 0 4px var(--ink);
 }
@@ -332,6 +388,18 @@
   text-transform: uppercase;
 }
 
+/* The team's own write-up, straight from the form — `pre-line` so the
+   paragraph breaks they typed survive, and `overflow-wrap` so a pasted URL
+   or a 40-letter German noun cannot widen the column. */
+.game-card__notes {
+  margin: 0 0 1.2rem;
+  color: #3a3352;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
 .game-card__cta {
   display: block;
   margin-top: auto;
@@ -345,12 +413,173 @@
   letter-spacing: 0.04em;
   text-align: center;
   text-transform: uppercase;
+  transition: transform 0.08s steps(2, end), box-shadow 0.08s steps(2, end);
 }
 
-.game-card:hover .game-card__cta { background: #fff; }
+.game-card__cta:hover { background: #fff; }
+
+.game-card__cta:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* an upload that could not be signed this request — still a shelf entry, just
+   not a playable one, so it keeps the slot and loses the affordance */
+.game-card__cta.is-off {
+  background: #d7cfae;
+  box-shadow: none;
+  color: #5c4d74;
+  cursor: not-allowed;
+}
+
+.game-card__meta {
+  margin: 0.6rem 0 0;
+  color: #5c4d74;
+  font-size: 0.82rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 
 /* --------------------------------------------------------------------------
-   Locked arcade, and the empty state
+   The locked shelf
+
+   The library, blurred, with the notice pinned in the middle of it. The tiles
+   under the blur are empty by design — see ArcadeLockedShelf: a blur is paint,
+   so anything real behind it would still be readable in view-source.
+   -------------------------------------------------------------------------- */
+/* Folded away until asked for: the page is the clock and the submit button
+   while the jam runs, and the shelf is a thing a visitor chooses to look at. */
+.arcade__locked {
+  position: relative;
+  margin-top: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+/* Clipped rather than fully drawn: at one column a phone would otherwise get
+   nine tiles of nothing to scroll past, and the note would sit somewhere in
+   the middle of it. The mask lets the shelf fade out instead of stopping. */
+.arcade__grid--ghost {
+  max-height: min(72vh, 720px);
+  overflow: hidden;
+  filter: blur(7px) saturate(0.8);
+  opacity: 0.9;
+  pointer-events: none;
+  user-select: none;
+  mask-image: linear-gradient(180deg, #000 62%, transparent 100%);
+}
+
+.ghost {
+  /* the real card's shell, minus everything that would carry information */
+  min-height: 380px;
+  cursor: default;
+}
+
+.ghost__cover {
+  height: 172px;
+  border-bottom: 4px solid var(--ink);
+  background: repeating-linear-gradient(45deg, #2a2545 0 14px, #17152d 14px 28px);
+}
+
+/* three shuffles of the same skeleton, so nine tiles do not read as one tile
+   printed nine times */
+.ghost--2 .ghost__cover { background: repeating-linear-gradient(45deg, #24406b 0 14px, #17152d 14px 28px); }
+.ghost--3 .ghost__cover { background: repeating-linear-gradient(45deg, #3a2a52 0 18px, #17152d 18px 36px); }
+
+.ghost__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.ghost__line {
+  height: 0.85rem;
+  border-radius: 2px;
+  background: rgba(23, 21, 45, 0.16);
+}
+
+.ghost__line--team { width: 42%; background: rgba(127, 48, 2, 0.3); }
+.ghost__line--title { width: 76%; height: 1.15rem; background: rgba(23, 21, 45, 0.28); }
+.ghost__line--short { width: 58%; }
+.ghost--2 .ghost__line--title { width: 62%; }
+.ghost--3 .ghost__line--title { width: 88%; }
+.ghost--2 .ghost__line--short { width: 40%; }
+
+.ghost__cta {
+  margin-top: auto;
+  height: 2.6rem;
+  border: 3px solid rgba(23, 21, 45, 0.45);
+  background: rgba(255, 210, 63, 0.55);
+}
+
+/* Pinned over the blur. `inset: 0` covers only the clipped part of the shelf,
+   which is the part on screen, so the note is centred on what is visible. */
+.arcade__note-slot {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+/* A sticky note, taped to the glass: paper yellow, a torn-ish pixel edge from
+   the site's own corner radius, and just enough tilt to look dropped there
+   rather than laid out. */
+.arcade__note {
+  position: relative;
+  width: min(30rem, 100%);
+  padding: clamp(1.6rem, 4vw, 2.4rem) clamp(1.4rem, 4vw, 2.2rem)
+    clamp(1.5rem, 4vw, 2rem);
+  border: 4px solid var(--ink);
+  border-radius: 4px 20px 6px 18px;
+  background:
+    linear-gradient(200deg, #fff6b0 0%, #ffe27a 55%, #ffd23f 100%);
+  box-shadow:
+    8px 10px 0 rgba(12, 34, 73, 0.28),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.45);
+  text-align: center;
+  transform: rotate(-2.4deg);
+  animation: arcade-note-sway 7s ease-in-out infinite alternate;
+}
+
+/* the strip of tape holding it up */
+.arcade__note-tape {
+  position: absolute;
+  top: -1.15rem;
+  left: 50%;
+  width: 7.5rem;
+  height: 2.1rem;
+  border: 2px solid rgba(12, 34, 73, 0.22);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 2px 0 rgba(12, 34, 73, 0.12);
+  transform: translateX(-50%) rotate(-4deg);
+}
+
+.arcade__note h2 {
+  margin: 0 0 0.9rem;
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: clamp(0.95rem, 3.4vw, 1.35rem);
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.arcade__note p {
+  margin: 0 auto;
+  max-width: 30ch;
+  color: #3a2a02;
+  font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+  line-height: 1.45;
+}
+
+@keyframes arcade-note-sway {
+  from { transform: rotate(-2.4deg); }
+  to { transform: rotate(1.4deg); }
+}
+
+/* --------------------------------------------------------------------------
+   Panels: the empty shelf, and the two things that can go wrong
    -------------------------------------------------------------------------- */
 .arcade__panel {
   width: min(660px, 100%);
@@ -584,7 +813,14 @@
 @media (prefers-reduced-motion: reduce) {
   .arcade__clouds img { animation: none; }
 
+  /* the note keeps its tilt, it just stops swaying */
+  .arcade__note {
+    animation: none;
+    transform: rotate(-2.4deg);
+  }
+
   .game-card,
   .arcade__cta,
+  .game-card__cta,
   .game__download { transition: none; }
 }

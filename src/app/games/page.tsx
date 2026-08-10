@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import { countGames, listGames } from "@/lib/gallery";
-import { GALLERY_OPENS_AT, formatGalleryOpening, isGalleryOpen } from "@/config/site";
-import {
-  ArcadeGrid,
-  ArcadeHeader,
-  ArcadeNotice,
-  ArcadeShell,
-} from "./arcade-parts";
+import { countGames } from "@/lib/gallery";
+import { GALLERY_OPENS_AT, isGalleryOpen } from "@/config/site";
+import { ArcadeHeader, ArcadeNotice, ArcadeShell } from "./arcade-parts";
 
 export const metadata: Metadata = {
   title: "The Arcade | Jammy Jam",
@@ -14,26 +9,25 @@ export const metadata: Metadata = {
     "Hand your game in, then play everything else built at Jammy Jam.",
 };
 
-/* Download links are signed per request and expire, so this page can never be
-   cached — a cached copy would hand out dead URLs. */
+/* The head-count is live all jam, so nothing here may be cached. */
 export const dynamic = "force-dynamic";
 
+/**
+ * The arcade's front door: the countdown, the hand-in button, and the way
+ * through to the shelf at /games/shelf.
+ *
+ * No game data is read here at all — only how many are in. Everything a
+ * visitor could look at lives one click away, which keeps this page the same
+ * shape before and after the deadline.
+ */
 export default async function GamesPage() {
   const open = isGalleryOpen();
 
-  /* Before the deadline only the head-count crosses the line: no titles, no
-     covers, no team names. Nothing a team could scout mid-jam. */
-  let games: Awaited<ReturnType<typeof listGames>> = [];
   let count = 0;
   let failed = false;
 
   try {
-    if (open) {
-      games = await listGames();
-      count = games.length;
-    } else {
-      count = await countGames();
-    }
+    count = await countGames();
   } catch {
     failed = true;
   }
@@ -48,20 +42,9 @@ export default async function GamesPage() {
 
       {failed ? (
         <ArcadeNotice title="The arcade is offline">
-          The shelf could not be loaded. Try again in a moment.
+          The head-count could not be loaded. The shelf still works.
         </ArcadeNotice>
-      ) : !open ? (
-        <ArcadeNotice title="The shelf is still locked">
-          Every game appears here the moment the clock hits zero, on{" "}
-          {formatGalleryOpening()}.
-        </ArcadeNotice>
-      ) : games.length === 0 ? (
-        <ArcadeNotice title="Nothing on the shelf">
-          No games were submitted before the deadline.
-        </ArcadeNotice>
-      ) : (
-        <ArcadeGrid games={games} basePath="/games" />
-      )}
+      ) : null}
     </ArcadeShell>
   );
 }

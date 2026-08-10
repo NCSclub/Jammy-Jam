@@ -40,8 +40,25 @@ export function formatDeadline() {
  */
 export const GALLERY_OPENS_AT = new Date("2026-08-14T10:00:00+01:00");
 
+/** Has the jam ended? Decides the clock, the submit button and the wording. */
 export function isGalleryOpen(now: Date = new Date()) {
   return now >= GALLERY_OPENS_AT;
+}
+
+/**
+ * May this request see the games themselves?
+ *
+ * Normally the same question as `isGalleryOpen()`, and it must stay that way in
+ * production. The difference is the local escape hatch: ARCADE_UNLOCKED=1 in
+ * .env.local fills the shelf with real cards while the front page keeps its
+ * countdown and its submit button, so the pre-deadline site can be used and the
+ * result of using it can be looked at, in the same session.
+ *
+ * Server environment only, so no visitor can flip it.
+ */
+export function canSeeGames(now: Date = new Date()) {
+  if (process.env.ARCADE_UNLOCKED === "1") return true;
+  return isGalleryOpen(now);
 }
 
 /** e.g. "14 August 2026 at 10:00" — for the locked arcade notice. */

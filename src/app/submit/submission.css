@@ -11,6 +11,36 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
+   Close button — out of the form, back to the arcade
+   -------------------------------------------------------------------------- */
+/* Sits in the header's own corner rather than over the frame's bevel, so the
+   speed lines run behind it and it cannot clip the pixel border. */
+.jj-close {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 3px var(--jj-frame-dark);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.72rem;
+  line-height: 1;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.jj-close:hover { background: var(--jj-red-700); }
+
+.jj-close:focus-visible {
+  outline: 3px solid var(--jj-cyan);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
    Drop zone — an oversized input well you can also drag a file onto
    -------------------------------------------------------------------------- */
 .jj-drop {

@@ -3,8 +3,12 @@ import { formatBytes } from "@/lib/submission-limits";
 import "./games.css";
 
 /**
- * One team's page body. Shared by the live route and the preview so both show
- * the same thing; `downloadHref` is null when the build could not be signed.
+ * One team's page body — the shelf card at full size, and nothing more.
+ *
+ * Shared by the live route and the preview so both show the same thing;
+ * `downloadHref` is null when the build could not be signed. The report, the
+ * deck and a team's own links are deliberately absent: they are jury material,
+ * and this page is public the moment the shelf unlocks.
  */
 
 export type GameDetailData = {
@@ -15,11 +19,6 @@ export type GameDetailData = {
   build_size: number;
   coverUrl: string | null;
   downloadHref: string | null;
-  reportUrl: string | null;
-  reportIsFile: boolean;
-  deckUrl: string | null;
-  deckIsFile: boolean;
-  other_links: string[];
 };
 
 export default function GameDetail({
@@ -29,10 +28,6 @@ export default function GameDetail({
   game: GameDetailData;
   backHref: string;
 }) {
-  const hasDocs = Boolean(
-    game.reportUrl || game.deckUrl || game.other_links.length,
-  );
-
   return (
     <>
       {/* the only chrome left on this page — without it the shelf is
@@ -75,72 +70,9 @@ export default function GameDetail({
           <p className="game__meta">
             {game.buildName} · {formatBytes(game.build_size)}
           </p>
-
-          {hasDocs ? (
-            <>
-              <p className="game__section-title">More from this team</p>
-              <ul className="game__links">
-                <Doc
-                  label="Report"
-                  href={game.reportUrl}
-                  isFile={game.reportIsFile}
-                />
-                <Doc
-                  label="Presentation"
-                  href={game.deckUrl}
-                  isFile={game.deckIsFile}
-                />
-                {game.other_links.map((href) => (
-                  <li key={href}>
-                    <a href={href} target="_blank" rel="noreferrer noopener">
-                      <span>{prettyHost(href)}</span>
-                      <span aria-hidden="true">↗</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
         </div>
       </div>
     </>
   );
 }
 
-/** A report or deck: a signed download if uploaded, else the team's own link. */
-function Doc({
-  label,
-  href,
-  isFile,
-}: {
-  label: string;
-  href: string | null;
-  isFile: boolean;
-}) {
-  if (!href) return null;
-
-  return (
-    <li>
-      <a
-        href={href}
-        {...(isFile ? {} : { target: "_blank", rel: "noreferrer noopener" })}
-      >
-        <span>{label}</span>
-        <span aria-hidden="true">{isFile ? "↓" : "↗"}</span>
-      </a>
-    </li>
-  );
-}
-
-/** "figma.com/design/abc" reads better on a button than a full query string. */
-function prettyHost(href: string) {
-  try {
-    const url = new URL(href);
-    const tail = url.pathname.replace(/\/$/, "");
-    return `${url.hostname.replace(/^www\./, "")}${
-      tail.length > 24 ? `${tail.slice(0, 24)}…` : tail
-    }`;
-  } catch {
-    return href;
-  }
-}

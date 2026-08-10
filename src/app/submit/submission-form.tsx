@@ -138,8 +138,6 @@ export default function SubmissionForm() {
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [progress, setProgress] = useState<Progress | null>(null);
-  /* Where this team's page now lives, handed back by the API on insert. */
-  const [slug, setSlug] = useState<string | null>(null);
 
   const busy = status === "sending";
 
@@ -235,7 +233,9 @@ export default function SubmissionForm() {
       }
 
       setProgress({ label: "submission", percent: 100, step: queue.length, total: queue.length });
-      const saved = await json(
+      /* the response carries the new row's slug; nothing on this screen needs
+         it any more, but the call still has to succeed before "done" */
+      await json(
         await fetch("/api/submissions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -253,7 +253,6 @@ export default function SubmissionForm() {
           }),
         }),
       );
-      setSlug(typeof saved?.slug === "string" ? saved.slug : null);
       setStatus("done");
     } catch (caught) {
       setStatus("idle");
@@ -274,6 +273,11 @@ export default function SubmissionForm() {
             {/* deep bottom padding keeps Sonic's head clear of the subtitle —
                 he stands 41px above the checker strip */}
             <header className="jj-header px-6 pt-7 pb-16 sm:px-8">
+              {/* the way back out: this board covers the whole screen, so
+                  without it the only exit is the browser's back button */}
+              <Link href="/games" className="jj-close" aria-label="Close">
+                <span aria-hidden="true">✕</span>
+              </Link>
               <h1 className="jj-title text-base sm:text-xl">
                 Jammy Jam
                 <br />
@@ -307,19 +311,20 @@ export default function SubmissionForm() {
                   <span className="jj-done__coin" aria-hidden="true" />
                   <p className="jj-done text-sm sm:text-base">Game submitted!</p>
                   <p className="jj-hint max-w-sm">
-                    {gameTitle} is in, with everything attached. Your team now
-                    has a page in the arcade, and it goes live for everyone when
-                    the jam ends. Good luck, player.
+                    {gameTitle} is in, with everything attached. It sits with
+                    everyone else&apos;s now, blurred out until the jam ends.
+                    Good luck, player.
                   </p>
                   <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-                    {slug ? (
-                      <Link
-                        href={`/games/${slug}`}
-                        className="jj-btn jj-cut jj-cut--sm inline-flex items-center justify-center"
-                      >
-                        See your page
-                      </Link>
-                    ) : null}
+                    {/* The shelf, not the team's own page: that page 404s until
+                        the deadline, so sending a team straight to it the second
+                        they submit was a dead end. */}
+                    <Link
+                      href="/games/shelf"
+                      className="jj-btn jj-cut jj-cut--sm inline-flex items-center justify-center"
+                    >
+                      See other games
+                    </Link>
                     <Link
                       href="/"
                       className="jj-btn jj-btn--ghost jj-cut jj-cut--sm inline-flex items-center justify-center"
@@ -384,6 +389,32 @@ export default function SubmissionForm() {
                     />
                   </Field>
 
+                  {/* Sits with the build, not at the bottom of the form: this is
+                      the text printed on the game's card in the arcade, so it
+                      belongs next to the thing it describes rather than in the
+                      afterthought slot the old "anything to add" field had. */}
+                  <Field
+                    name="notes"
+                    label="What your game is about"
+                    error={errors.notes}
+                  >
+                    <textarea
+                      id="jj-notes"
+                      name="notes"
+                      rows={3}
+                      maxLength={800}
+                      placeholder="A couple of lines for the arcade: what it is, how to play it, anything a player should know."
+                      value={notes}
+                      onChange={(event) => {
+                        setNotes(event.target.value);
+                        clearError("notes");
+                      }}
+                      aria-invalid={Boolean(errors.notes)}
+                      aria-describedby={errors.notes ? "jj-notes-error" : undefined}
+                      className="jj-input jj-cut jj-cut--sm"
+                    />
+                  </Field>
+
                   <Field
                     name="cover"
                     label="One screenshot, for the cover"
@@ -426,24 +457,6 @@ export default function SubmissionForm() {
                       onLink={changeLink}
                       idle="Drop your presentation"
                       placeholder="https://... (Canva, Slides, PDF)"
-                    />
-                  </Field>
-
-                  <Field name="notes" label="Anything to add" error={errors.notes}>
-                    <textarea
-                      id="jj-notes"
-                      name="notes"
-                      rows={3}
-                      maxLength={800}
-                      placeholder="Controls, known bugs, credits, a demo link, anything else we should know."
-                      value={notes}
-                      onChange={(event) => {
-                        setNotes(event.target.value);
-                        clearError("notes");
-                      }}
-                      aria-invalid={Boolean(errors.notes)}
-                      aria-describedby={errors.notes ? "jj-notes-error" : undefined}
-                      className="jj-input jj-cut jj-cut--sm"
                     />
                   </Field>
 

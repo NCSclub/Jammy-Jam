@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
-import { GALLERY_OPENS_AT } from "@/config/site";
-import { ArcadeGrid, ArcadeHeader, ArcadeShell } from "../arcade-parts";
+import { GALLERY_OPENS_AT, formatGalleryOpening } from "@/config/site";
+import {
+  ArcadeGrid,
+  ArcadeHeader,
+  ArcadeLockedShelf,
+  ArcadeShell,
+} from "../arcade-parts";
 import { FAKE_GAMES, fakeCover } from "./fake-games";
 import PreviewFlag from "./preview-flag";
 import "./preview.css";
@@ -23,10 +28,15 @@ export default async function ArcadePreview({ searchParams }: Props) {
 
   const games = FAKE_GAMES.map((game) => ({
     id: game.slug,
-    slug: game.slug,
     team_name: game.team_name,
     game_title: game.game_title,
+    notes: game.notes,
+    buildName: game.buildName,
+    build_size: game.build_size,
     coverUrl: fakeCover(game),
+    /* the last one has no signable build, which is the state that decides
+       whether the card degrades or collapses */
+    downloadHref: game.cover === null ? null : "#",
   }));
 
   return (
@@ -38,15 +48,12 @@ export default async function ArcadePreview({ searchParams }: Props) {
       />
 
       {closed ? (
-        <ArcadeGrid games={games} basePath="/games/preview" />
+        <ArcadeGrid games={games} />
       ) : (
-        <div className="arcade__panel">
-          <h2>The shelf is still locked</h2>
-          <p>
-            Every game appears here the moment the clock hits zero. Everyone at
-            once, nobody early.
-          </p>
-        </div>
+        <ArcadeLockedShelf
+          count={games.length}
+          opensAt={formatGalleryOpening()}
+        />
       )}
     </ArcadeShell>
   );
