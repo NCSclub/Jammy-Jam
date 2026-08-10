@@ -395,7 +395,7 @@ export default function SubmissionForm() {
                       afterthought slot the old "anything to add" field had. */}
                   <Field
                     name="notes"
-                    label="What your game is about"
+                    label="A short description, for other players"
                     error={errors.notes}
                   >
                     <textarea
@@ -403,7 +403,7 @@ export default function SubmissionForm() {
                       name="notes"
                       rows={3}
                       maxLength={800}
-                      placeholder="A couple of lines for the arcade: what it is, how to play it, anything a player should know."
+                      placeholder="Two or three lines about your game. Everyone will read this on your card in the arcade."
                       value={notes}
                       onChange={(event) => {
                         setNotes(event.target.value);
