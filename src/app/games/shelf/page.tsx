@@ -50,7 +50,7 @@ export default async function ShelfPage() {
   }
 
   return (
-    <ArcadeShell>
+    <ArcadeShell wide>
       <ShelfHeader open={open} count={count} />
 
       {failed ? (

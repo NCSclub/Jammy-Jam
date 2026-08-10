@@ -37,10 +37,13 @@ export type GameCardData = {
 export function ArcadeShell({
   banner,
   sonic = false,
+  wide = false,
   children,
 }: {
   banner?: React.ReactNode;
   sonic?: boolean;
+  /** A wider column for the shelf: three cards fit better with room to spare. */
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -50,7 +53,7 @@ export function ArcadeShell({
       <div className="arcade__clouds">
         <CloudField />
       </div>
-      <div className="arcade__inner">
+      <div className={`arcade__inner${wide ? " arcade__inner--wide" : ""}`}>
         {banner}
         {children}
       </div>
@@ -174,9 +177,7 @@ export function ArcadeGrid({ games }: { games: GameCardData[] }) {
             <div className="game-card__body">
               <p className="game-card__team">{game.team_name}</p>
               <h2 className="game-card__title">{game.game_title}</h2>
-              {game.notes ? (
-                <p className="game-card__notes">{game.notes}</p>
-              ) : null}
+              <Notes text={game.notes} />
 
               {game.downloadHref ? (
                 <a className="game-card__cta" href={game.downloadHref}>
@@ -195,6 +196,38 @@ export function ArcadeGrid({ games }: { games: GameCardData[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * A team's write-up, folded after four lines when there is more than that.
+ *
+ * The cut-off is a character count rather than a measurement: measuring means
+ * JavaScript in the browser on every card, and a card that renders long and
+ * then snaps shorter. 260 characters is about four lines in this column, so a
+ * write-up under it is shown whole and never grows a pointless "see more"; over
+ * it, the clamp does the real trimming and the toggle just releases it.
+ *
+ * A `<details>` again, so the shelf stays a server component. The summary is
+ * ordered last by flexbox — it has to be the element's first child to work.
+ */
+const NOTES_FOLD = 260;
+
+function Notes({ text }: { text: string | null }) {
+  if (!text) return null;
+
+  if (text.length <= NOTES_FOLD) {
+    return <p className="game-card__notes">{text}</p>;
+  }
+
+  return (
+    <details className="game-card__more">
+      <summary className="game-card__more-btn">
+        <span className="game-card__more-open">See more</span>
+        <span className="game-card__more-shut">See less</span>
+      </summary>
+      <p className="game-card__notes">{text}</p>
+    </details>
   );
 }
 
