@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import CloudField from "@/components/CloudField";
 import { pixelFontVars } from "@/lib/pixel-fonts";
@@ -26,12 +27,20 @@ export type GameCardData = {
   downloadHref: string | null;
 };
 
-/** Sky, page column, Green Hill floor. */
+/**
+ * Sky, page column, Green Hill floor.
+ *
+ * `sonic` puts the runner on the grass. Only the front page asks for him: on a
+ * shelf full of cards he is one more thing competing for the eye, and the point
+ * of that page is the games.
+ */
 export function ArcadeShell({
   banner,
+  sonic = false,
   children,
 }: {
   banner?: React.ReactNode;
+  sonic?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -45,7 +54,19 @@ export function ArcadeShell({
         {banner}
         {children}
       </div>
-      <div className="arcade__ground" aria-hidden="true" />
+      <div className="arcade__ground" aria-hidden="true">
+        {/* the site's own runner, standing on the grass the way he does in the
+            About section — the strip he stands on was cut from around him */}
+        {sonic ? (
+          <Image
+            className="arcade__sonic"
+            src="/sonic-emerald.png"
+            alt=""
+            width={185}
+            height={182}
+          />
+        ) : null}
+      </div>
     </main>
   );
 }

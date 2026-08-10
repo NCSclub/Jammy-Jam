@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { countGames, listGames } from "@/lib/gallery";
-import { canSeeGames, formatGalleryOpening } from "@/config/site";
+import {
+  canSeeGames,
+  formatGalleryOpening,
+  isGalleryOpen,
+} from "@/config/site";
 import {
   ArcadeGrid,
   ArcadeLockedShelf,
@@ -57,7 +61,12 @@ export default async function ShelfPage() {
         <ArcadeLockedShelf count={count} opensAt={formatGalleryOpening()} />
       ) : games.length === 0 ? (
         <ArcadeNotice title="Nothing here yet">
-          No games were submitted before the deadline.
+          {/* An empty open shelf means two different things depending on which
+              side of the deadline it is: everyone's games are still coming, or
+              nobody handed one in. */}
+          {isGalleryOpen()
+            ? "No games were submitted before the deadline."
+            : "The games will show up here once submissions close."}
         </ArcadeNotice>
       ) : (
         <ArcadeGrid games={games} />

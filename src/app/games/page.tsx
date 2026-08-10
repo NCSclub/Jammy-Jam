@@ -33,7 +33,7 @@ export default async function GamesPage() {
   }
 
   return (
-    <ArcadeShell>
+    <ArcadeShell sonic>
       <ArcadeHeader
         closed={open}
         count={count}

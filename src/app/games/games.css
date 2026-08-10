@@ -810,8 +810,32 @@
   image-rendering: pixelated;
 }
 
+/* Sonic, standing on the blades rather than running across them: the sprite is
+   a single frame, and a single frame slid sideways reads as a cardboard cutout
+   being dragged. Standing still with a slow idle bob is what the rest of the
+   page does too — the rings bobbed, the clouds breathe.
+
+   `bottom: 88%` puts his feet a little way into the grass, the same way the
+   About strip has him. `steps` on the bob keeps the movement pixel-sized
+   instead of smoothly sub-pixel, so he stays a sprite. */
+.arcade__sonic {
+  position: absolute;
+  bottom: 88%;
+  left: clamp(0.75rem, 7vw, 8rem);
+  width: auto;
+  height: clamp(78px, 9vw, 168px);
+  image-rendering: pixelated;
+  animation: arcade-sonic-idle 2.6s steps(2, end) infinite alternate;
+}
+
+@keyframes arcade-sonic-idle {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .arcade__clouds img { animation: none; }
+  .arcade__clouds img,
+  .arcade__sonic { animation: none; }
 
   /* the note keeps its tilt, it just stops swaying */
   .arcade__note {
