@@ -326,10 +326,10 @@ export default function SubmissionForm() {
                       See other games
                     </Link>
                     <Link
-                      href="/"
+                      href="/games"
                       className="jj-btn jj-btn--ghost jj-cut jj-cut--sm inline-flex items-center justify-center"
                     >
-                      Back to the event
+                      Back to the arcade
                     </Link>
                   </div>
                 </div>
@@ -533,7 +533,7 @@ export default function SubmissionForm() {
 
                 <div className="mt-7 flex flex-col-reverse gap-4 sm:flex-row sm:justify-between">
                   <Link
-                    href="/"
+                    href="/games"
                     className="jj-btn jj-btn--ghost jj-cut jj-cut--sm inline-flex items-center justify-center"
                   >
                     Back
