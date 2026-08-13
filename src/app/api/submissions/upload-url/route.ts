@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isSubmissionsClosed } from "@/lib/event-state";
 import {
   ASSETS,
   assetExtension,
@@ -16,6 +17,15 @@ import {
  * ceilings, and a 500 MB cover screenshot is not a screenshot.
  */
 export async function POST(request: Request) {
+  /* same gate as the save route: once the admin closes the doors, no upload
+     slots — a late build cannot even reach the bucket */
+  if (await isSubmissionsClosed()) {
+    return NextResponse.json(
+      { error: "Submissions are closed." },
+      { status: 403 },
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const kind = body?.kind;
   const fileName = String(body?.fileName ?? "");

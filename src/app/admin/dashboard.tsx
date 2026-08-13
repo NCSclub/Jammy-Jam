@@ -121,7 +121,14 @@ const DAY_LABEL: Record<string, string> = {
 
 type Patch = { id: string; changes: Partial<Participant> };
 
-export function Dashboard({ participants }: { participants: Participant[] }) {
+export function Dashboard({
+  participants,
+  submissionsClosed: initialClosed,
+}: {
+  participants: Participant[];
+  /** the arcade switch's position when the page rendered, from event_state */
+  submissionsClosed: boolean;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -155,6 +162,33 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
   /* the solo people ticked for a brand-new squad; null means the builder is
      closed. Seeded with whoever opened it. */
   const [newTeam, setNewTeam] = useState<string[] | null>(null);
+  /* the arcade switch, mirrored locally so the button flips without a reload */
+  const [submissionsClosed, setSubmissionsClosed] = useState(initialClosed);
+  const [arcadeBusy, setArcadeBusy] = useState(false);
+
+  /** The big red / green switch: closing stops submissions AND unlocks the
+      public shelf, so everyone sees everyone's games. Reversible on purpose —
+      a misclick at the ceremony must not be fatal — but always confirmed. */
+  async function toggleArcade() {
+    const next = !submissionsClosed;
+    const warning = next
+      ? "Close submissions?\n\nTeams can no longer hand games in, and the public shelf UNLOCKS — everyone sees everyone's games. You can reopen if this was a mistake."
+      : "Reopen submissions?\n\nThe public shelf locks again and teams can hand games in.";
+    if (!window.confirm(warning)) return;
+
+    setArcadeBusy(true);
+    try {
+      await api("/api/admin/arcade", {
+        method: "POST",
+        body: JSON.stringify({ closed: next }),
+      });
+      setSubmissionsClosed(next);
+    } catch (caught) {
+      alert(caught instanceof Error ? caught.message : "Could not flip the switch");
+    } finally {
+      setArcadeBusy(false);
+    }
+  }
 
   /**
    * Leaving the dashboard ends the session — closing the tab, navigating away
@@ -401,6 +435,22 @@ export function Dashboard({ participants }: { participants: Participant[] }) {
           <span>ADMIN</span>
         </div>
         <div className="heading-actions">
+          <button
+            className={submissionsClosed ? "arcade-switch is-closed" : "arcade-switch"}
+            disabled={arcadeBusy}
+            onClick={toggleArcade}
+            title={
+              submissionsClosed
+                ? "The shelf is public and submissions are refused. Click to reopen."
+                : "Teams can submit; the shelf is locked. Click to close submissions and open the arcade."
+            }
+          >
+            {arcadeBusy
+              ? "Flipping…"
+              : submissionsClosed
+                ? "● Arcade OPEN — reopen submissions"
+                : "● Submissions OPEN — close & open arcade"}
+          </button>
           <button className="ghost-button" onClick={() => router.push("/jury")}>Jury room</button>
           <button className="ghost-button" onClick={handleLogout}>Log out ↗</button>
         </div>

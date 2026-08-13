@@ -1,11 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { getSessionRole } from "@/lib/admin-auth";
 import { LoginForm } from "./login-form";
 
 export default async function AdminLoginPage() {
-  if (await isAdminAuthenticated()) redirect("/admin");
+  /* already signed in — go where the session's role allows */
+  const role = await getSessionRole();
+  if (role === "admin") redirect("/admin");
+  if (role === "jury") redirect("/jury");
 
   return (
     <main className="admin-login">
@@ -20,10 +23,11 @@ export default async function AdminLoginPage() {
           height={422}
           priority
         />
-        <p className="login-eyebrow">NCS CLUB · ADMIN ACCESS</p>
+        <p className="login-eyebrow">NCS CLUB · STAFF ACCESS</p>
         <h1>Welcome back</h1>
         <p className="login-copy">
-          Enter the event password to manage registrations and participant check-ins.
+          Enter your staff password. Admins land on the dashboard, jury members
+          in the jury room.
         </p>
         <LoginForm />
         <Link className="back-link" href="/">← Back to the event website</Link>

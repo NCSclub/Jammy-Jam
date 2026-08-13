@@ -26,6 +26,9 @@ Create `.env.local`:
 
 ```bash
 ADMIN_PASSWORD=use-a-strong-event-password
+# optional: a second password that only opens the jury room + scoring,
+# so judges never get delete access to the registration table
+JURY_PASSWORD=a-different-password-for-judges
 ADMIN_SESSION_SECRET=use-a-long-random-secret
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=service-role-key
@@ -34,6 +37,18 @@ SUPABASE_SERVICE_ROLE_KEY=service-role-key
 The Supabase keys are server-only on purpose — no `NEXT_PUBLIC_` prefix. The
 service-role key bypasses row-level security, so it must never reach the
 browser. Every query runs through a server action.
+
+## Closing submissions / opening the arcade
+
+Submissions do not close on a clock — an admin closes them. The dashboard's
+arcade switch (top right of `/admin`) does both halves at once: teams can no
+longer hand builds in, and the public shelf at `/games/shelf` unlocks so
+everyone sees everyone's games. It is reversible, and always asks before
+flipping. The countdown on `/games` shows the *planned* deadline
+(`GALLERY_OPENS_AT` in `src/config/site.ts`) but decides nothing.
+
+Run `supabase/event-state.sql` once to create the switch's table. Until it
+exists, the site falls back to the planned deadline.
 
 ## Registration
 
@@ -47,6 +62,34 @@ show a "registrations closed" panel, and the server action refuses the insert.
 
 `/admin` is password-gated (`ADMIN_PASSWORD`). It lists live registrations with
 search, team-size filters, check-in, editing, deletion and a full CSV export.
+
+Login is rate limited (10 tries per IP per 15 minutes) and the session cookie
+carries a signed role: the admin password opens everything, the jury password
+only the jury room.
+
+## Jury room, scoring and leaderboard
+
+The marking scheme is data, not code: `/jury/criteria` (admin password) is
+where the head judge defines the criteria before scoring starts — each one's
+name, a one-line description, and what it is marked out of ("Presentation" out
+of 20, "Gameplay" out of 10…). Add, remove, rename, rescale and reorder
+freely; saving applies to the whole jury room at once. The SQL seed ships a
+five-criterion starter scheme so the room works out of the box.
+
+`/jury` (admin or jury password) lists every submitted build with its
+attachments, plus a score panel per game built from those criteria, with a
+private comment. Judges type their name once at the top; one sheet per judge
+per game, saving again updates their own sheet. If criteria change after
+sheets were saved, stale sheets drop off the averages until their judge
+re-saves — or the admin wipes all sheets from the criteria page and judging
+starts fresh.
+
+`/jury/leaderboard` ranks teams by the average of their judges' totals, with a
+podium, per-criterion breakdown bars, and a list of games still waiting for
+marks. Staff-only — winners are announced on stage, not by URL.
+
+Before first use, run `supabase/jury-scores.sql` in the Supabase SQL editor to
+create the `jury_criteria` and `jury_scores` tables.
 
 ## Countdown
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getGame } from "@/lib/gallery";
-import { canSeeGames } from "@/config/site";
+import { canSeeGames } from "@/lib/event-state";
 import { ArcadeShell } from "../arcade-parts";
 import GameDetail from "../game-detail";
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  if (!canSeeGames()) return { title: "The Arcade | Jammy Jam" };
+  if (!(await canSeeGames())) return { title: "The Arcade | Jammy Jam" };
 
   const { slug } = await params;
   const game = await getGame(slug).catch(() => null);
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function GamePage({ params }: Props) {
   /* The gate is here as well as on the shelf: without it, anyone holding a
      guessed team slug could read a submission before the doors open. */
-  if (!canSeeGames()) notFound();
+  if (!(await canSeeGames())) notFound();
 
   const { slug } = await params;
   const game = await getGame(slug).catch(() => null);

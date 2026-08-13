@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isSubmissionsClosed } from "@/lib/event-state";
 import { slugify } from "@/lib/slug";
 import {
   ASSETS,
@@ -58,6 +59,17 @@ async function uniqueSlug(db: SupabaseClient, teamName: string) {
 }
 
 export async function POST(request: Request) {
+  /* The page hides the button once the admin closes the doors; this is what
+     stops a team submitting past that anyway with a hand-made request.
+     isSubmissionsClosed, not canSeeGames: the ARCADE_UNLOCKED escape hatch is
+     for looking at the shelf early in dev, and must never close the desk. */
+  if (await isSubmissionsClosed()) {
+    return NextResponse.json(
+      { error: "Submissions are closed." },
+      { status: 403 },
+    );
+  }
+
   const body = await request.json().catch(() => null);
 
   const teamName = String(body?.teamName ?? "").trim();

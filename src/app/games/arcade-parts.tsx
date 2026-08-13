@@ -303,7 +303,7 @@ export function ShelfHeader({ open, count }: { open: boolean; count: number }) {
         <p className="arcade__lede">
           {open
             ? "Every game built at Jammy Jam. Grab a build and go play it."
-            : "Everything handed in so far, still under wraps. Come back when the clock hits zero."}
+            : "Everything handed in so far, still under wraps. Come back once submissions close."}
         </p>
         <p className="arcade__tally">
           <strong>{count}</strong> {count === 1 ? "game" : "games"}{" "}

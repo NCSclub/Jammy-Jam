@@ -21,16 +21,18 @@ function remaining(target: number) {
 const UNITS = ["Days", "Hrs", "Min", "Sec"] as const;
 
 /**
- * Counts down to the submission deadline — the same moment the shelf unlocks.
+ * Counts down to the PLANNED submission deadline.
+ *
+ * The plan, not the decision: whether submissions are actually open is the
+ * admin's switch in `event_state`, checked on the server — so this clock
+ * hitting zero changes nothing by itself, and winding a laptop clock forward
+ * gets a zeroed timer and nothing else. If the organizers run late, the timer
+ * sits at zero with "closing any moment" while the doors stay open.
  *
  * Renders a dashed placeholder on the first paint: the server does not know
  * the visitor's "now", so committing to a number during SSR guarantees a
  * hydration mismatch a second later. Reserving the same box means the header
  * does not jump when the real digits arrive.
- *
- * This only decides what the page *looks* like. Whether games are actually
- * served is decided by `isGalleryOpen()` on the server, so winding a laptop
- * clock forward gets you a zeroed timer and nothing else.
  */
 export default function ArcadeClock({ deadline }: { deadline: string }) {
   const target = new Date(deadline).getTime();
@@ -44,21 +46,15 @@ export default function ArcadeClock({ deadline }: { deadline: string }) {
     return () => clearInterval(tick);
   }, [target]);
 
-  if (left?.done) {
-    return (
-      <p className="arcade__closed" role="status">
-        Submissions closed
-      </p>
-    );
-  }
-
   const values = left
     ? [left.days, left.hours, left.minutes, left.seconds]
     : null;
 
   return (
     <div className="arcade__timer">
-      <p className="arcade__timer-label">Submissions close in</p>
+      <p className="arcade__timer-label">
+        {left?.done ? "Closing any moment — hand it in!" : "Submissions close in"}
+      </p>
       <div
         className="arcade__clock"
         role="timer"

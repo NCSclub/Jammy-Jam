@@ -7,6 +7,13 @@ const COOKIE_NAME = "jammy_admin_session";
 const SESSION_VALUE = "jammy-jam-admin";
 
 /**
+ * Who a session belongs to. `admin` runs the registration dashboard and the
+ * jury room; `jury` only judges — a judge's cookie opens /jury and the scoring
+ * routes, never the participant table.
+ */
+export type StaffRole = "admin" | "jury";
+
+/**
  * Hard ceiling on a session, enforced by the server. The dashboard already ends
  * the session when it is left, and the cookie dies with the browser — this is
  * the layer neither of those can provide: a cookie that was copied off the
@@ -20,41 +27,56 @@ function getSecret() {
   return secret;
 }
 
-/* The issue time is signed along with the marker, so the timestamp in the
-   cookie cannot be edited to extend a session — changing it breaks the HMAC. */
-function sign(issuedAt: number) {
+/* The role and issue time are signed along with the marker, so neither can be
+   edited — promoting "jury" to "admin" or extending the timestamp breaks the
+   HMAC. */
+function sign(role: StaffRole, issuedAt: number) {
   return createHmac("sha256", getSecret())
-    .update(`${SESSION_VALUE}:${issuedAt}`)
+    .update(`${SESSION_VALUE}:${role}:${issuedAt}`)
     .digest("hex");
 }
 
-export async function isAdminAuthenticated() {
-  if (!process.env.ADMIN_SESSION_SECRET) return false;
+/** The verified role in the cookie, or null for no/expired/tampered session. */
+export async function getSessionRole(): Promise<StaffRole | null> {
+  if (!process.env.ADMIN_SESSION_SECRET) return null;
   const value = (await cookies()).get(COOKIE_NAME)?.value;
-  if (!value) return false;
+  if (!value) return null;
 
-  const [issuedRaw, token] = value.split(".");
+  const [role, issuedRaw, token] = value.split(".");
   const issuedAt = Number(issuedRaw);
-  if (!token || !Number.isFinite(issuedAt)) return false;
+  if (!token || !Number.isFinite(issuedAt)) return null;
+  if (role !== "admin" && role !== "jury") return null;
 
   /* age first, so an expired cookie never even reaches the comparison.
      A negative age means the timestamp is in the future — clock skew or a
      tampered value; either way, refuse. */
   const age = Date.now() - issuedAt;
-  if (age < 0 || age > MAX_SESSION_MS) return false;
+  if (age < 0 || age > MAX_SESSION_MS) return null;
 
-  const expected = sign(issuedAt);
-  if (token.length !== expected.length) return false;
+  const expected = sign(role, issuedAt);
+  if (token.length !== expected.length) return null;
 
-  return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+  return timingSafeEqual(Buffer.from(token), Buffer.from(expected))
+    ? role
+    : null;
 }
 
-export async function createAdminSession() {
+/** Full access: the registration dashboard and every /api/registrations route. */
+export async function isAdminAuthenticated() {
+  return (await getSessionRole()) === "admin";
+}
+
+/** The jury room and the scoring routes — admins judge too. */
+export async function isJuryAuthenticated() {
+  return (await getSessionRole()) !== null;
+}
+
+export async function createAdminSession(role: StaffRole) {
   /* stamped with the issue time, so every login produces a different cookie
      value instead of one constant string that would work forever */
   const issuedAt = Date.now();
 
-  (await cookies()).set(COOKIE_NAME, `${issuedAt}.${sign(issuedAt)}`, {
+  (await cookies()).set(COOKIE_NAME, `${role}.${issuedAt}.${sign(role, issuedAt)}`, {
     httpOnly: true,
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",

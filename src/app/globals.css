@@ -1378,6 +1378,35 @@ body {
   box-shadow: 5px 5px 0 #d8e8fa;
 }
 
+/* The arcade switch: the one button on the page that changes what the public
+   sees, so it wears a state colour — green while submissions run, gold once
+   the shelf is open — instead of the ghost buttons' neutral white. */
+.arcade-switch {
+  padding: 16px 22px;
+  border: 1px solid #7fc98b;
+  border-radius: 2px;
+  color: #14532d;
+  background: #e9fbee;
+  box-shadow: 5px 5px 0 #cdeed4;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.arcade-switch.is-closed {
+  border-color: #e0a417;
+  color: #6b4a00;
+  background: #fff3cd;
+  box-shadow: 5px 5px 0 #f4e3ac;
+}
+
+.arcade-switch:disabled { opacity: 0.6; cursor: default; }
+
+@media (max-width: 620px) {
+  .arcade-switch { padding: 12px 14px; font-size: 12px; }
+}
+
 @media (max-width: 620px) {
   .admin-dashboard .admin-header .ghost-button {
     padding: 12px 16px;

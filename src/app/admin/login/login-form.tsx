@@ -22,15 +22,17 @@ export function LoginForm() {
         body: JSON.stringify({ password: String(password ?? "") }),
       });
 
+      const body = await response.json().catch(() => null);
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
         setError(body?.error ?? "Login failed");
         return;
       }
 
       /* the cookie is set by the route; refresh so the server component behind
-         /admin re-runs its auth check and lets us through */
-      router.replace("/admin");
+         the destination re-runs its auth check and lets us through. A jury
+         password goes straight to the jury room — /admin would only bounce it
+         back here. */
+      router.replace(body?.role === "jury" ? "/jury" : "/admin");
       router.refresh();
     } catch {
       setError("Could not reach the server");
@@ -41,7 +43,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="login-form">
-      <label htmlFor="password">Admin password</label>
+      <label htmlFor="password">Staff password</label>
       <div className="password-field">
         <span aria-hidden="true">◆</span>
         <input

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { getSessionRole } from "@/lib/admin-auth";
 import { listSubmissions } from "@/lib/submissions";
+import { listScores, type JuryScoreRow } from "@/lib/scores";
+import { listCriteria } from "@/lib/criteria";
+import { getGradeOutOf } from "@/lib/event-state";
+import type { Criterion } from "@/lib/judging";
+import { ArcadeShell } from "../games/arcade-parts";
+import { JudgeBar, ScorePanel } from "./scoring";
 import "./jury.css";
 
 export const dynamic = "force-dynamic";
@@ -11,21 +17,62 @@ function fileSize(bytes: number) {
 }
 
 export default async function JuryPage() {
-  if (!(await isAdminAuthenticated())) redirect("/admin/login");
+  /* jury password or admin password both open this room; only admins also get
+     the registrations link below */
+  const role = await getSessionRole();
+  if (!role) redirect("/admin/login");
 
   let submissions: Awaited<ReturnType<typeof listSubmissions>> = [];
   let loadError = false;
   try { submissions = await listSubmissions(); } catch { loadError = true; }
 
+  /* Scoring fails soft: a missing jury table must not take down the download
+     links — the cards just render without their panels. */
+  let criteria: Criterion[] = [];
+  let gradeOutOf: number | null = null;
+  let scores: JuryScoreRow[] = [];
+  try {
+    criteria = await listCriteria();
+    scores = await listScores();
+    gradeOutOf = await getGradeOutOf();
+  } catch { /* tables not set up yet */ }
+
+  const scoresFor = (id: string) =>
+    scores.filter((score) => score.submission_id === id);
+
   return (
-    <main className="jury-page">
+    /* the hero's world, verbatim: sky, drifting clouds, the Green Hill ground
+       with Sonic and Shadow on the grass — the jury room is a room IN the
+       site, not a back office bolted onto it */
+    <ArcadeShell wide sonic>
       <header className="jury-topbar">
         <div><p>JAMMY JAM · STAFF ONLY</p><h1>Jury Room</h1></div>
-        <nav><Link href="/admin">Registrations</Link><Link href="/">Event site</Link></nav>
+        <nav>
+          <Link href="/jury/leaderboard">Leaderboard</Link>
+          {role === "admin" ? <Link href="/jury/criteria">Criteria</Link> : null}
+          {role === "admin" ? <Link href="/admin">Registrations</Link> : null}
+          <Link href="/">Event site</Link>
+        </nav>
       </header>
       <section className="jury-summary">
         <span>BUILDS RECEIVED</span><strong>{submissions.length}</strong>
       </section>
+
+      {criteria.length === 0 ? (
+        <div className="jury-judge" role="alert">
+          <label>SCORING NOT SET UP</label>
+          <p>
+            {role === "admin" ? (
+              <>No criteria defined yet — <Link href="/jury/criteria">set up the marking scheme</Link> to open scoring. Downloads work regardless.</>
+            ) : (
+              <>No criteria defined yet — ask the organizer to set up the marking scheme. Downloads work regardless.</>
+            )}
+          </p>
+        </div>
+      ) : (
+        <JudgeBar />
+      )}
+
       {loadError ? (
         <div className="jury-empty"><h2>Submission desk isn&apos;t ready</h2><p>Run the included Supabase setup file, then refresh this page.</p></div>
       ) : submissions.length === 0 ? (
@@ -69,12 +116,21 @@ export default async function JuryPage() {
                     ))}
                   </ul>
                 ) : null}
+
+                {criteria.length > 0 ? (
+                  <ScorePanel
+                    submissionId={item.id}
+                    criteria={criteria}
+                    gradeOutOf={gradeOutOf}
+                    initialScores={scoresFor(item.id)}
+                  />
+                ) : null}
               </div>
             </article>
           ))}
         </section>
       )}
-    </main>
+    </ArcadeShell>
   );
 }
 

@@ -2,42 +2,18 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isRegistrationOpen } from "@/config/site";
 import { syncTeam } from "@/lib/registrations";
+import { createRateLimiter, requestIp } from "@/lib/rate-limit";
 import type { RegistrationValues } from "@/components/registration/RegistrationForm";
 
 /**
  * POST /api/register — the public sign-up endpoint.
  *
- * The only route in the app that is not behind the admin cookie, so the guards
+ * The only route in the app that is not behind the staff cookie, so the guards
  * live here: the deadline is judged by the server clock, a filled honeypot is
- * swallowed, and one IP gets five tries per ten minutes.
+ * swallowed, and one IP gets five tries per ten minutes. The unique email
+ * constraint and the honeypot cover what the in-memory limiter cannot.
  */
-
-/* Best-effort throttle. It lives in memory, so on serverless it is per
-   instance rather than global — enough to stop a naive script hammering one
-   endpoint, not a distributed flood. The unique email constraint and the
-   honeypot do the rest. */
-const RATE_LIMIT = { max: 5, windowMs: 10 * 60 * 1000 };
-const hits = new Map<string, number[]>();
-
-function rateLimit(ip: string) {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter(
-    (at) => now - at < RATE_LIMIT.windowMs,
-  );
-
-  if (recent.length >= RATE_LIMIT.max) return false;
-
-  recent.push(now);
-  hits.set(ip, recent);
-
-  /* keep the map from growing forever on a long-lived instance */
-  if (hits.size > 5000) {
-    for (const [key, times] of hits) {
-      if (!times.some((at) => now - at < RATE_LIMIT.windowMs)) hits.delete(key);
-    }
-  }
-  return true;
-}
+const limiter = createRateLimiter({ max: 5, windowMs: 10 * 60 * 1000 });
 
 export async function POST(request: Request) {
   if (!isRegistrationOpen()) {
@@ -54,12 +30,7 @@ export async function POST(request: Request) {
   /* a filled honeypot means a bot: accept silently so it does not retry */
   if (values.website?.trim()) return NextResponse.json({ ok: true });
 
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
-
-  if (!rateLimit(ip)) {
+  if (!limiter.hit(requestIp(request))) {
     return NextResponse.json(
       { error: "Too many attempts, wait a few minutes and try again" },
       { status: 429 },

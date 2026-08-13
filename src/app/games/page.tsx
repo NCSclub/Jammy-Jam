@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { countGames } from "@/lib/gallery";
-import { GALLERY_OPENS_AT, isGalleryOpen } from "@/config/site";
+import { GALLERY_OPENS_AT } from "@/config/site";
+import { isSubmissionsClosed } from "@/lib/event-state";
 import { ArcadeHeader, ArcadeNotice, ArcadeShell } from "./arcade-parts";
 
 export const metadata: Metadata = {
@@ -21,7 +22,9 @@ export const dynamic = "force-dynamic";
  * shape before and after the deadline.
  */
 export default async function GamesPage() {
-  const open = isGalleryOpen();
+  /* the admin's switch, not the clock — the countdown below is the plan,
+     this is the decision */
+  const open = await isSubmissionsClosed();
 
   let count = 0;
   let failed = false;
