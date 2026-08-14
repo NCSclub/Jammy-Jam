@@ -1729,6 +1729,194 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
+/* --------------------------------------------------------------------------
+   Games received
+
+   A register rather than a gallery: the cover art lives in the jury room, and
+   the question here is who is in and who is not. One row per team, the clock
+   time on the left where a column of times can be read down.
+   -------------------------------------------------------------------------- */
+.subs-count {
+  padding: 5px 13px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #0e50c0;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.subs-empty {
+  margin: 4px 0 0;
+  padding: 18px;
+  border: 2px dashed #d8e6f6;
+  border-radius: 2px;
+  color: #6b7f99;
+  background: #f8fbff;
+  font-size: 14px;
+}
+
+.subs-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.subs-row {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+  padding: 13px 14px;
+  border: 2px solid #d8e6f6;
+  border-radius: 2px;
+  background: #f8fbff;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+}
+
+.subs-when {
+  padding-top: 2px;
+  color: #0e50c0;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 13px;
+  cursor: default;
+}
+
+.subs-who { min-width: 0; }
+
+.subs-team {
+  margin: 0;
+  color: #6b7f99;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.subs-who h3 {
+  margin: 2px 0 0;
+  color: #12305c;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.subs-note {
+  margin: 6px 0 0;
+  color: #48617f;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.subs-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.subs-file {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 2px solid #0e50c0;
+  border-radius: 2px;
+  color: #0e50c0;
+  background: #ffffff;
+  font-family: var(--font-sonic-hud), Arial, sans-serif;
+  font-size: 11px;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.subs-file:hover { background: #eaf3ff; }
+
+.subs-file small {
+  color: #6b7f99;
+  font-size: 9px;
+  text-transform: none;
+}
+
+/* nothing to click: a file the team never sent, or one that would not sign */
+.subs-file.is-off {
+  border-color: #d8e6f6;
+  color: #8a99ad;
+  background: #f2f7fd;
+}
+
+.subs-file--extra { border-style: dashed; }
+
+/* Red, and last in the row: the only control here that destroys something. */
+.subs-delete {
+  border-color: #f0c9c6;
+  color: #b3261e;
+  background: #fdf3f2;
+  cursor: pointer;
+}
+
+.subs-delete:hover { background: #fbe3e1; }
+.subs-delete:disabled { opacity: 0.5; cursor: default; }
+
+.subs-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.subs-jury {
+  width: auto;
+  padding: 0 14px;
+  line-height: 32px;
+  text-decoration: none;
+}
+
+.subs-error {
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border: 2px solid #f0c9c6;
+  border-radius: 2px;
+  color: #b3261e;
+  background: #fdf3f2;
+  font-size: 13px;
+}
+
+.subs-missing { margin-top: 14px; }
+
+.subs-missing ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.subs-missing li {
+  padding: 5px 11px;
+  border: 1px solid #f0c9c6;
+  border-radius: 999px;
+  color: #b3261e;
+  background: #fdf3f2;
+  font-size: 13px;
+}
+
+.subs-missing p {
+  margin: 10px 0 0;
+  color: #6b7f99;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .subs-row { grid-template-columns: 48px minmax(0, 1fr); }
+  .subs-files { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
 .night-column {
   padding: 14px;
   border: 2px solid #d8e6f6;

@@ -42,7 +42,14 @@ export default async function GamesPage() {
 
   return (
     <ArcadeShell sonic>
-      <ArcadeHeader phase={phase} count={count} deadline={deadline} />
+      <ArcadeHeader
+        phase={phase}
+        count={count}
+        deadline={deadline}
+        /* Only a scheduled window has a moment to die on; in manual mode the
+           button waits for the organizer's switch instead. */
+        closesAt={submissionWindow.scheduled ? submissionWindow.closesAt : null}
+      />
 
       {failed ? (
         <ArcadeNotice title="The arcade is offline">

@@ -5,6 +5,7 @@ import { pixelFontVars } from "@/lib/pixel-fonts";
 import { formatBytes } from "@/lib/submission-limits";
 import { formatAlgiers, type SubmissionPhase } from "@/lib/event-window";
 import ArcadeClock from "./arcade-clock";
+import ArcadeDesk from "./arcade-desk";
 import "./games.css";
 
 /**
@@ -121,11 +122,15 @@ export function ArcadeHeader({
   phase,
   count,
   deadline,
+  closesAt = null,
 }: {
   phase: SubmissionPhase;
   count: number;
   /** The next boundary the clock counts to: opening, or closing. */
   deadline: string;
+  /** The scheduled shutting instant, so an open tab's button dies on time.
+      Null when the doors are being worked by hand. */
+  closesAt?: string | null;
 }) {
   const closed = phase === "after";
 
@@ -154,12 +159,7 @@ export function ArcadeHeader({
           <p className="arcade__soon">Submissions open at {formatAlgiers(deadline)}</p>
         </>
       ) : (
-        <>
-          <ArcadeClock deadline={deadline} />
-          <Link className="arcade__cta" href="/submit">
-            ▸ Submit your game
-          </Link>
-        </>
+        <ArcadeDesk deadline={deadline} closesAt={closesAt} />
       )}
 
       {/* Everyone else's work lives on its own page: this one is the clock and

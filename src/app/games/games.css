@@ -15,6 +15,14 @@
   --cream: #fff8d9;
 
   position: relative;
+  /* A column so the ground can be pushed to the bottom of a short page. Once
+     submissions close the header loses its clock and its button, and on a big
+     screen that left the grass floating halfway up with sky under it — the
+     page has a floor, and a floor is at the bottom whatever is standing on it.
+     Taller pages are unaffected: the column just grows past the viewport and
+     the ground follows the content down. */
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   /* generous top gap: the title used to sit right under the address bar,
      which made the page feel stuck to the browser rather than starting */
@@ -124,6 +132,8 @@
 .arcade__inner {
   position: relative;
   z-index: 1;
+  /* takes all the slack in the column, which is what holds the grass down */
+  flex: 1 0 auto;
   width: min(1180px, 100%);
   margin: 0 auto;
   /* the only thing between the last thing on the page and the grass, so it is
@@ -307,6 +317,28 @@
 
 .arcade__head--closed .arcade__cta--shelf { background: var(--gold); }
 .arcade__head--closed .arcade__cta--shelf:hover { background: #ffe680; }
+
+/* --------------------------------------------------------------------------
+   The closed page, standing on its own
+
+   Four things instead of six: the clock and the submit button are gone, so the
+   spacing that felt right under a countdown leaves the rest huddled at the top
+   of a big screen. The closed state gets a looser rhythm, and the block sits in
+   the middle of whatever room is left rather than pinned under the padding.
+
+   `:has()` keeps it to this one state — the shelf and a game's own page run
+   long and must stay hard against the top.
+   -------------------------------------------------------------------------- */
+.arcade__inner:has(> .arcade__head--closed) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.arcade__head--closed .arcade__lede { margin-top: 2.4rem; }
+.arcade__head--closed .arcade__closed { margin-top: 2.6rem; }
+.arcade__head--closed .arcade__cta--shelf { margin-top: 2rem; }
+.arcade__head--closed .arcade__tally { margin-top: 2.8rem; }
 
 /* what replaces the clock and the button once the deadline is behind us */
 .arcade__closed {
@@ -886,6 +918,8 @@
 
   position: relative;
   z-index: 1;
+  /* never squashed by the column above it — the strip is a fixed-height image */
+  flex-shrink: 0;
   height: var(--ground-h);
   margin: 0 calc(-1 * clamp(1rem, 4vw, 3rem));
   background: url("/sections/ground-strip.png") repeat-x left top;

@@ -193,6 +193,34 @@ export default function SubmissionForm({
 
   const busy = status === "sending";
 
+  /**
+   * The desk shutting under a form that is already open.
+   *
+   * The API refuses a late build regardless — this is so a team finds out from
+   * a dead button rather than from a 403 after sitting through a 400 MB
+   * upload. An upload already in flight is left alone: it was started in time,
+   * and killing it mid-transfer would lose a hand-in that is going to land.
+   */
+  const [shut, setShut] = useState(false);
+
+  useEffect(() => {
+    if (!closesAt) return;
+    const target = Date.parse(closesAt);
+    if (Number.isNaN(target)) return;
+
+    /* Watching the wall clock, not deriving state from props. */
+    function check() {
+      if (Date.now() >= target) setShut(true);
+    }
+
+    check();
+    const tick = setInterval(check, 1000);
+    return () => clearInterval(tick);
+  }, [closesAt]);
+
+  /* Already sending is the exception: that one finishes. */
+  const locked = shut && !busy;
+
   function clearError(name: FieldName) {
     setErrors((current) => {
       if (!current[name]) return current;
@@ -233,6 +261,9 @@ export default function SubmissionForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    /* Enter in a text field submits a form whatever its button says. */
+    if (locked) return;
 
     const nextErrors = validate(teamName, gameTitle, files, links);
 
@@ -340,7 +371,14 @@ export default function SubmissionForm({
               </p>
               {/* Hidden on the success board — a team that has just handed in
                   does not need a deadline any more. */}
-              {status === "done" ? null : <OpenStrip closesAt={closesAt} />}
+              {status === "done" ? null : shut ? (
+                <p className="jj-open-strip jj-open-strip--shut" role="status">
+                  <span className="jj-open-strip__dot" aria-hidden="true" />
+                  Submissions are CLOSED
+                </p>
+              ) : (
+                <OpenStrip closesAt={closesAt} />
+              )}
             </header>
 
             {/* Same finish-line strip and runner as the registration form: he
@@ -596,8 +634,12 @@ export default function SubmissionForm({
                   >
                     Back
                   </Link>
-                  <button type="submit" disabled={busy} className="jj-btn jj-cut jj-cut--sm">
-                    {busy ? "Sending..." : "Submit game"}
+                  <button
+                    type="submit"
+                    disabled={busy || locked}
+                    className="jj-btn jj-cut jj-cut--sm"
+                  >
+                    {busy ? "Sending..." : locked ? "Submissions closed" : "Submit game"}
                   </button>
                 </div>
               </form>

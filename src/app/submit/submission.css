@@ -32,12 +32,25 @@
   letter-spacing: 0.04em;
 }
 
+/* The same strip once the deadline passes under an open form: red, and the
+   dot stops pulsing, because nothing is running any more. */
+.jj-open-strip--shut {
+  color: #ffc3cd;
+  box-shadow: inset 0 0 0 3px #a8324a;
+}
+
 .jj-open-strip__dot {
   width: 8px;
   height: 8px;
   background: #47e06f;
   box-shadow: 0 0 0 2px rgba(71, 224, 111, 0.28);
   animation: jj-open-pulse 1.6s steps(2, end) infinite;
+}
+
+.jj-open-strip--shut .jj-open-strip__dot {
+  background: #ff7b96;
+  box-shadow: 0 0 0 2px rgba(255, 123, 150, 0.28);
+  animation: none;
 }
 
 @keyframes jj-open-pulse {

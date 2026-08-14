@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type { Participant } from "./types";
+import type { AdminSubmission, Participant } from "./types";
 import { resolvePhase, type SubmissionWindow } from "@/lib/event-window";
 import { SubmissionWindowPanel } from "./submission-window";
+import { SubmissionsPanel } from "./submissions-panel";
 
 /**
  * Every mutation is a plain fetch to /api/*. `api` throws with the route's own
@@ -126,10 +127,15 @@ type Patch = { id: string; changes: Partial<Participant> };
 export function Dashboard({
   participants,
   submissionWindow: initialWindow,
+  submissions,
+  submissionsFailed,
 }: {
   participants: Participant[];
   /** the doors' whole state when the page rendered, from event_state */
   submissionWindow: SubmissionWindow;
+  /** what teams have handed in, signed for ten minutes at render time */
+  submissions: AdminSubmission[];
+  submissionsFailed: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -535,6 +541,14 @@ export function Dashboard({
       {/* Directly under the stats: the one panel that changes what the public
           sees, so it is never something you scroll to find. */}
       <SubmissionWindowPanel window={arcadeWindow} onSaved={setArcadeWindow} />
+
+      {/* And directly under the doors, the thing coming through them: closing
+          submissions is a decision made by looking at this list. */}
+      <SubmissionsPanel
+        submissions={submissions}
+        failed={submissionsFailed}
+        teamNames={teamGroups.map((group) => group.name)}
+      />
 
       <section className="night-panel" aria-label="Presential attendance">
         <div className="panel-title">
