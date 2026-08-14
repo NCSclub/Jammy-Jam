@@ -98,7 +98,10 @@ export async function POST(request: Request) {
   if (notes.length > 800) {
     return NextResponse.json({ error: "That note is too long." }, { status: 400 });
   }
-  if (invalidAttachment("build", build)) {
+  /* The build is optional — a team may submit without one. Attaching a bad
+     file is still an error, though: silently dropping it would tell the team
+     their build is in when it is not. */
+  if (build && invalidAttachment("build", build)) {
     return NextResponse.json({ error: "That build file is not valid." }, { status: 400 });
   }
   if (invalidAttachment("cover", cover)) {
@@ -177,9 +180,9 @@ export async function POST(request: Request) {
     slug,
     team_name: teamName,
     game_title: gameTitle,
-    build_path: build!.path,
-    build_name: build!.name,
-    build_size: build!.size,
+    build_path: build?.path ?? null,
+    build_name: build?.name ?? null,
+    build_size: build?.size ?? null,
     cover_path: cover!.path,
     cover_name: cover!.name,
     cover_size: cover!.size,

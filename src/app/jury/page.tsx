@@ -98,12 +98,24 @@ export default async function JuryPage() {
                   <div className="jury-controls"><span>NOTES FROM THE TEAM</span><p>{item.notes}</p></div>
                 ) : null}
                 <dl>
-                  <div><dt>Build</dt><dd>{item.build_name} · {fileSize(item.build_size)}</dd></div>
+                  <div>
+                    <dt>Build</dt>
+                    <dd>
+                      {item.build_name && item.build_size !== null
+                        ? `${item.build_name} · ${fileSize(item.build_size)}`
+                        : "None submitted"}
+                    </dd>
+                  </div>
                 </dl>
                 <div className="jury-links">
                   {item.buildUrl
                     ? <a className="jury-download" href={item.buildUrl}>Download build ↓</a>
-                    : <span className="jury-download disabled">Build unavailable</span>}
+                    /* A build that exists but could not be signed is a fault;
+                       one that was never sent is the team's own choice, and the
+                       jury needs to be able to tell the two apart. */
+                    : <span className="jury-download disabled">
+                        {item.build_name ? "Build unavailable" : "No build"}
+                      </span>}
                   <Attachment label="Report" href={item.reportUrl} stored={Boolean(item.report_path)} />
                   <Attachment label="Presentation" href={item.deckUrl} stored={Boolean(item.deck_path)} />
                 </div>

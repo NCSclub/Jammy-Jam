@@ -31,10 +31,13 @@ export type GameCard = {
   team_name: string;
   game_title: string;
   notes: string | null;
-  build_size: number;
+  /* Null together when the team submitted without a build: no name, no size,
+     no download. A card with nothing to download still has a cover and a
+     write-up, so it renders — it just does not offer a link. */
+  build_size: number | null;
   created_at: string;
   coverUrl: string | null;
-  buildName: string;
+  buildName: string | null;
   downloadHref: string | null;
 };
 
@@ -68,7 +71,7 @@ export async function listGames(): Promise<GameCard[]> {
   type Row = Omit<GameCard, "coverUrl" | "buildName" | "downloadHref"> & {
     cover_path: string | null;
     build_path: string | null;
-    build_name: string;
+    build_name: string | null;
   };
 
   /* Two signatures per card, all of them in flight at once: ten teams is

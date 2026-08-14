@@ -15,8 +15,9 @@ export type GameDetailData = {
   team_name: string;
   game_title: string;
   notes: string | null;
-  buildName: string;
-  build_size: number;
+  /* Null when the team submitted without a build. */
+  buildName: string | null;
+  build_size: number | null;
   coverUrl: string | null;
   downloadHref: string | null;
 };
@@ -63,13 +64,17 @@ export default function GameDetail({
               ↓ Download &amp; play
             </a>
           ) : (
+            /* Two different silences: a build that exists but could not be
+               signed is a fault, one that was never sent is a choice. */
             <span className="game__download is-off" aria-disabled="true">
-              Build unavailable
+              {game.buildName ? "Build unavailable" : "No build submitted"}
             </span>
           )}
-          <p className="game__meta">
-            {game.buildName} · {formatBytes(game.build_size)}
-          </p>
+          {game.buildName && game.build_size !== null ? (
+            <p className="game__meta">
+              {game.buildName} · {formatBytes(game.build_size)}
+            </p>
+          ) : null}
         </div>
       </div>
     </>

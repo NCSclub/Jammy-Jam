@@ -191,6 +191,19 @@
   line-height: 1.3;
 }
 
+/* A standing instruction under a zone, not a complaint about what is in it:
+   sits below the drop rather than inside it, and stays put whether or not a
+   file has been picked. The one place the 500 MB cap is written down before
+   someone has already hit it — a team with a 2 GB build needs to know where it
+   goes before they start the upload, not after it is refused. */
+.jj-drop-note {
+  margin-top: 8px;
+  font-family: var(--jj-font-body), ui-monospace, monospace;
+  font-size: 17px;
+  line-height: 1.3;
+  color: var(--jj-ink-dim);
+}
+
 /* The cover screenshot shows itself once picked — it is the card art the jury
    will see, so "did I attach the right one" should not need a second guess.
    `contain`, not `cover`: a cropped preview would misrepresent the framing. */

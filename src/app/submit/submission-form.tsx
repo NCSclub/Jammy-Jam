@@ -59,9 +59,16 @@ function validate(teamName: string, gameTitle: string, files: Files, links: Link
   if (!teamName.trim()) errors.teamName = "Enter your team name";
   if (!gameTitle.trim()) errors.gameTitle = "Name your game";
 
-  for (const kind of ["build", "cover"] as const) {
-    const problem = checkFile(kind, files[kind]);
-    if (problem) errors[kind] = problem;
+  const coverProblem = checkFile("cover", files.cover);
+  if (coverProblem) errors.cover = coverProblem;
+
+  /* The build may be left out entirely — a team can hand in the write-up and
+     the deck and still be building the executable. One that IS attached is
+     held to the same rules as before: a wrong file is a mistake, not a
+     shortcut to submitting without a build. */
+  if (files.build) {
+    const problem = checkFile("build", files.build);
+    if (problem) errors.build = problem;
   }
 
   for (const kind of LINKABLE) {
@@ -424,7 +431,6 @@ export default function SubmissionForm({
                   <Field
                     name="build"
                     label="The zip folder, executable inside"
-                    required
                     error={errors.build}
                   >
                     <Drop
@@ -435,6 +441,10 @@ export default function SubmissionForm({
                       onChoose={chooseFile}
                       idle="Drop your build here"
                     />
+                    <p className="jj-drop-note">
+                      If your game is over 500 MB, put the zip folder on the
+                      drive instead.
+                    </p>
                   </Field>
 
                   {/* Sits with the build, not at the bottom of the form: this is

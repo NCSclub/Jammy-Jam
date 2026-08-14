@@ -22,9 +22,12 @@ export type GameSubmission = {
   created_at: string;
   team_name: string;
   game_title: string;
-  build_path: string;
-  build_name: string;
-  build_size: number;
+  /* The build is optional: a team may hand in the report and the deck and
+     still be adding the executable when the desk closes. All three columns
+     move together — a row either has a build or has none of it. */
+  build_path: string | null;
+  build_name: string | null;
+  build_size: number | null;
   cover_path: string;
   cover_name: string;
   cover_size: number;
