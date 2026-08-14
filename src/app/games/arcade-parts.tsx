@@ -3,7 +3,7 @@ import Link from "next/link";
 import CloudField from "@/components/CloudField";
 import { pixelFontVars } from "@/lib/pixel-fonts";
 import { formatBytes } from "@/lib/submission-limits";
-import type { SubmissionPhase } from "@/lib/event-window";
+import { formatAlgiers, type SubmissionPhase } from "@/lib/event-window";
 import ArcadeClock from "./arcade-clock";
 import "./games.css";
 
@@ -145,7 +145,14 @@ export function ArcadeHeader({
       {closed ? (
         <p className="arcade__closed">Submissions closed</p>
       ) : phase === "before" ? (
-        <ArcadeClock deadline={deadline} label="Submissions open in" doneLabel="Opening any moment…" />
+        <>
+          <ArcadeClock deadline={deadline} label="Submissions open in" doneLabel="Opening any moment…" />
+          {/* The hour in words under the clock, where the button will be. A
+              countdown answers "how long"; a team packing up wants "when", and
+              reads it off the same boundary the timer counts to, so the two
+              cannot disagree if the admin moves the window. */}
+          <p className="arcade__soon">Submissions open at {formatAlgiers(deadline)}</p>
+        </>
       ) : (
         <>
           <ArcadeClock deadline={deadline} />

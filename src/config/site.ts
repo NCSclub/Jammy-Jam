@@ -9,7 +9,7 @@
 // Example: "2026-09-15T09:00:00+01:00" -> Sept 15, 2026, 9:00 AM (UTC+1)
 // The home page counts down to the same moment the jam ends and the arcade
 // unlocks, so it stays in step with GALLERY_OPENS_AT below.
-export const EVENT_DATE_ISO = "2026-08-14T10:00:00+01:00";
+export const EVENT_DATE_ISO = "2026-08-14T11:45:00+01:00";
 
 /**
  * When sign-ups shut: 6 August 2026 at 20:00 Algeria time (UTC+1, no DST).
@@ -29,22 +29,27 @@ export function formatDeadline() {
 }
 
 /**
- * The PLANNED submission deadline — what the countdown on /games displays.
+ * The PLANNED hand-in window: 14 August 2026, 11:00 → 11:45 Algeria time.
  *
  * The plan only. Whether submissions are actually open, and whether the
  * public shelf shows everyone's games, is the admin's switch in the
  * `event_state` table (see src/lib/event-state.ts), flipped from the
- * dashboard. This date is also the fallback the switch degrades to if that
+ * dashboard. These dates are also the fallback the switch degrades to if that
  * table was never created.
+ *
+ * Two moments rather than one deadline: the schedule gives the last hour of
+ * day 7 to finalizing, so the desk only opens at 11:00. The shelf unlocks the
+ * instant it shuts, which is why one constant serves both.
  */
-export const GALLERY_OPENS_AT = new Date("2026-08-14T10:00:00+01:00");
+export const SUBMISSIONS_OPEN_AT = new Date("2026-08-14T11:00:00+01:00");
+export const GALLERY_OPENS_AT = new Date("2026-08-14T11:45:00+01:00");
 
 /** Past the planned deadline? Only the event-state fallback should ask. */
 export function isGalleryOpen(now: Date = new Date()) {
   return now >= GALLERY_OPENS_AT;
 }
 
-/** e.g. "14 August 2026 at 10:00" — for the locked arcade notice. */
+/** e.g. "14 August 2026 at 11:45" — for the locked arcade notice. */
 export function formatGalleryOpening() {
   return formatMoment(GALLERY_OPENS_AT);
 }

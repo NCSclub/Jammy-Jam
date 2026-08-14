@@ -1,7 +1,11 @@
 import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase";
-import { GALLERY_OPENS_AT, isGalleryOpen } from "@/config/site";
+import {
+  GALLERY_OPENS_AT,
+  isGalleryOpen,
+  SUBMISSIONS_OPEN_AT,
+} from "@/config/site";
 import {
   resolvePhase,
   type SubmissionPhase,
@@ -54,13 +58,17 @@ export async function getSubmissionWindow(): Promise<SubmissionWindow> {
   }
 
   /* Safety net: if event-state.sql has not been run (or the DB is briefly
-     unreachable), fall back to the planned deadline in src/config/site.ts so
-     the site still behaves sensibly instead of, e.g., accepting builds
-     forever. Expressed as a window so every caller below sees one shape. */
+     unreachable), fall back to the planned window in src/config/site.ts so the
+     site still behaves sensibly instead of, e.g., accepting builds forever.
+     Expressed as a window so every caller below sees one shape.
+
+     `scheduled` on purpose: with it off, resolvePhase reads the boolean and can
+     only answer open or after, so the planned 11:00 opening would be ignored
+     and an unconfigured database would take builds all morning. */
   return {
-    scheduled: false,
+    scheduled: true,
     closed: isGalleryOpen(),
-    opensAt: null,
+    opensAt: SUBMISSIONS_OPEN_AT.toISOString(),
     closesAt: GALLERY_OPENS_AT.toISOString(),
   };
 }

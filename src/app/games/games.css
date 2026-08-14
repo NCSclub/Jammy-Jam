@@ -281,6 +281,19 @@
   box-shadow: 2px 3px 0 var(--ink);
 }
 
+/* The opening hour, under the countdown, in the space the submit button will
+   take once the desk is open — so the page reads as a schedule rather than as
+   a button that has gone missing. */
+.arcade__soon {
+  margin: 1.1rem 0 0;
+  color: var(--gold);
+  font-family: var(--jj-font-pixel), monospace;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* The way through to the shelf. Same shape and press as the submit button so
    the two read as a pair, in cream rather than gold: while the jam runs the
    hand-in is the errand and the shelf is the detour. Once submissions close it
