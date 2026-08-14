@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GALLERY_OPENS_AT } from "@/config/site";
+import type { SubmissionPhase } from "@/lib/event-window";
 import {
   ArcadeGrid,
   ArcadeHeader,
@@ -21,10 +22,16 @@ export const metadata: Metadata = {
 type Props = { searchParams: Promise<{ phase?: string }> };
 
 export default async function ArcadePreview({ searchParams }: Props) {
-  /* ?phase=open shows the page after the deadline, which is the state that is
-     hardest to reach for real — the live page will not show it until August. */
+  /* ?phase=open shows the page after the deadline and ?phase=before shows it
+     ahead of the start — the two states that are hardest to reach for real,
+     since the live page only enters them when the admin's window says so. */
   const { phase } = await searchParams;
   const closed = phase === "open";
+  const stage: SubmissionPhase = closed
+    ? "after"
+    : phase === "before"
+      ? "before"
+      : "open";
 
   const games = FAKE_GAMES.map((game) => ({
     id: game.slug,
@@ -42,7 +49,7 @@ export default async function ArcadePreview({ searchParams }: Props) {
   return (
     <ArcadeShell banner={<PreviewFlag phase={closed ? "open" : "jam"} />}>
       <ArcadeHeader
-        closed={closed}
+        phase={stage}
         count={games.length}
         deadline={GALLERY_OPENS_AT.toISOString()}
       />

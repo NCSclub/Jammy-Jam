@@ -38,17 +38,30 @@ The Supabase keys are server-only on purpose — no `NEXT_PUBLIC_` prefix. The
 service-role key bypasses row-level security, so it must never reach the
 browser. Every query runs through a server action.
 
-## Closing submissions / opening the arcade
+## Opening and closing submissions
 
-Submissions do not close on a clock — an admin closes them. The dashboard's
-arcade switch (top right of `/admin`) does both halves at once: teams can no
-longer hand builds in, and the public shelf at `/games/shelf` unlocks so
-everyone sees everyone's games. It is reversible, and always asks before
-flipping. The countdown on `/games` shows the *planned* deadline
-(`GALLERY_OPENS_AT` in `src/config/site.ts`) but decides nothing.
+Two ways to move the doors, both from `/admin`, and closing always does both
+halves at once: teams can no longer hand builds in, and the public shelf at
+`/games/shelf` unlocks so everyone sees everyone's games.
 
-Run `supabase/event-state.sql` once to create the switch's table. Until it
-exists, the site falls back to the planned deadline.
+**On a schedule** — the *Submission window* panel. Type an opening time, a
+closing time, or both (Algeria time, UTC+1), tick "on a schedule", save. The
+doors then move on their own at those instants, judged by the server clock, and
+`/games` counts down to whichever one is next. The panel's status line always
+says where you are: not open yet, open with time left, or closed.
+
+**By hand** — the arcade switch, top right. One click, confirmed, reversible.
+Pressing it also switches the schedule off, because a clock that reversed the
+organizer's click a minute later would be worse than either mechanism alone.
+
+Three states exist, not two: *before* (desk shut, shelf still locked), *open*,
+and *after* (desk shut, shelf public). The old boolean could not tell the first
+from the last.
+
+Run `supabase/event-state.sql` once — it creates the table and is safe to
+re-run to add the scheduling columns to an existing one. Until it exists, the
+site falls back to the planned deadline (`GALLERY_OPENS_AT` in
+`src/config/site.ts`) and the schedule cannot be saved.
 
 ## Registration
 

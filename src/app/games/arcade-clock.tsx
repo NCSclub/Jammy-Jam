@@ -21,20 +21,30 @@ function remaining(target: number) {
 const UNITS = ["Days", "Hrs", "Min", "Sec"] as const;
 
 /**
- * Counts down to the PLANNED submission deadline.
+ * Counts down to the next moment the doors move — opening or closing,
+ * whichever is next, as the admin set it in `event_state`.
  *
- * The plan, not the decision: whether submissions are actually open is the
- * admin's switch in `event_state`, checked on the server — so this clock
- * hitting zero changes nothing by itself, and winding a laptop clock forward
- * gets a zeroed timer and nothing else. If the organizers run late, the timer
- * sits at zero with "closing any moment" while the doors stay open.
+ * The display, not the decision. Whether submissions are actually open is
+ * resolved on the server against the server's clock, so this hitting zero
+ * changes nothing by itself and winding a laptop forward gets a zeroed timer
+ * and nothing else. If the organizers run late, the timer sits at zero with
+ * "closing any moment" while the doors stay open — which is exactly what the
+ * teams in the room are being told.
  *
  * Renders a dashed placeholder on the first paint: the server does not know
  * the visitor's "now", so committing to a number during SSR guarantees a
  * hydration mismatch a second later. Reserving the same box means the header
  * does not jump when the real digits arrive.
  */
-export default function ArcadeClock({ deadline }: { deadline: string }) {
+export default function ArcadeClock({
+  deadline,
+  label = "Submissions close in",
+  doneLabel = "Closing any moment — hand it in!",
+}: {
+  deadline: string;
+  label?: string;
+  doneLabel?: string;
+}) {
   const target = new Date(deadline).getTime();
   const [left, setLeft] = useState<ReturnType<typeof remaining> | null>(null);
 
@@ -53,7 +63,7 @@ export default function ArcadeClock({ deadline }: { deadline: string }) {
   return (
     <div className="arcade__timer">
       <p className="arcade__timer-label">
-        {left?.done ? "Closing any moment — hand it in!" : "Submissions close in"}
+        {left?.done ? doneLabel : label}
       </p>
       <div
         className="arcade__clock"

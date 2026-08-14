@@ -4,6 +4,8 @@ import { useEffect, useMemo, useOptimistic, useState, useTransition } from "reac
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Participant } from "./types";
+import { resolvePhase, type SubmissionWindow } from "@/lib/event-window";
+import { SubmissionWindowPanel } from "./submission-window";
 
 /**
  * Every mutation is a plain fetch to /api/*. `api` throws with the route's own
@@ -123,11 +125,11 @@ type Patch = { id: string; changes: Partial<Participant> };
 
 export function Dashboard({
   participants,
-  submissionsClosed: initialClosed,
+  submissionWindow: initialWindow,
 }: {
   participants: Participant[];
-  /** the arcade switch's position when the page rendered, from event_state */
-  submissionsClosed: boolean;
+  /** the doors' whole state when the page rendered, from event_state */
+  submissionWindow: SubmissionWindow;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -162,27 +164,65 @@ export function Dashboard({
   /* the solo people ticked for a brand-new squad; null means the builder is
      closed. Seeded with whoever opened it. */
   const [newTeam, setNewTeam] = useState<string[] | null>(null);
-  /* the arcade switch, mirrored locally so the button flips without a reload */
-  const [submissionsClosed, setSubmissionsClosed] = useState(initialClosed);
+  /* the doors, mirrored locally so the header re-labels without a reload */
+  const [arcadeWindow, setArcadeWindow] = useState(initialWindow);
   const [arcadeBusy, setArcadeBusy] = useState(false);
 
-  /** The big red / green switch: closing stops submissions AND unlocks the
-      public shelf, so everyone sees everyone's games. Reversible on purpose —
-      a misclick at the ceremony must not be fatal — but always confirmed. */
+  /* A scheduled window's phase depends on the clock, so it cannot be decided
+     during SSR without guaranteeing a hydration mismatch. Null until the
+     browser has its own "now"; a hand-driven window needs no clock at all. */
+  const [tick, setTick] = useState<number | null>(null);
+  useEffect(() => {
+    // Syncing with an external clock, not deriving state from props.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTick(Date.now());
+    const timer = setInterval(() => setTick(Date.now()), 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const phase =
+    !arcadeWindow.scheduled
+      ? resolvePhase(arcadeWindow)
+      : tick === null
+        ? null
+        : resolvePhase(arcadeWindow, new Date(tick));
+
+  /** The big switch: closing stops submissions AND unlocks the public shelf,
+      so everyone sees everyone's games. Reversible on purpose — a misclick at
+      the ceremony must not be fatal — but always confirmed.
+
+      Pressing it takes manual control: the server stands the schedule down on
+      the same write, because a clock that reverses the organizer's click a
+      minute later is worse than either mechanism alone. */
   async function toggleArcade() {
-    const next = !submissionsClosed;
-    const warning = next
-      ? "Close submissions?\n\nTeams can no longer hand games in, and the public shelf UNLOCKS — everyone sees everyone's games. You can reopen if this was a mistake."
-      : "Reopen submissions?\n\nThe public shelf locks again and teams can hand games in.";
+    /* Only an open desk closes. "Before" and "after" both mean the doors are
+       shut, and in both cases the useful override is to throw them open. */
+    const next = phase === "open";
+    const override = arcadeWindow.scheduled
+      ? "\n\nThis also switches OFF the schedule — from now on the doors only move when you press this button."
+      : "";
+    const warning =
+      (next
+        ? "Close submissions?\n\nTeams can no longer hand games in, and the public shelf UNLOCKS — everyone sees everyone's games. You can reopen if this was a mistake."
+        : phase === "before"
+          ? "Open submissions now?\n\nTeams can start handing games in straight away, ahead of the scheduled time."
+          : "Reopen submissions?\n\nThe public shelf locks again and teams can hand games in.") +
+      override;
     if (!window.confirm(warning)) return;
 
     setArcadeBusy(true);
     try {
-      await api("/api/admin/arcade", {
+      const response = await api("/api/admin/arcade", {
         method: "POST",
         body: JSON.stringify({ closed: next }),
       });
-      setSubmissionsClosed(next);
+      const body = await response.json().catch(() => null);
+      setArcadeWindow({
+        scheduled: Boolean(body?.scheduled),
+        closed: Boolean(body?.closed ?? next),
+        opensAt: body?.opensAt ?? arcadeWindow.opensAt,
+        closesAt: body?.closesAt ?? arcadeWindow.closesAt,
+      });
     } catch (caught) {
       alert(caught instanceof Error ? caught.message : "Could not flip the switch");
     } finally {
@@ -436,20 +476,26 @@ export function Dashboard({
         </div>
         <div className="heading-actions">
           <button
-            className={submissionsClosed ? "arcade-switch is-closed" : "arcade-switch"}
-            disabled={arcadeBusy}
+            className={`arcade-switch${phase === "after" ? " is-closed" : ""}${phase === "before" ? " is-waiting" : ""}`}
+            disabled={arcadeBusy || phase === null}
             onClick={toggleArcade}
             title={
-              submissionsClosed
+              phase === "after"
                 ? "The shelf is public and submissions are refused. Click to reopen."
-                : "Teams can submit; the shelf is locked. Click to close submissions and open the arcade."
+                : phase === "before"
+                  ? "The schedule has not opened the doors yet. Click to open them now by hand."
+                  : "Teams can submit; the shelf is locked. Click to close submissions and open the arcade."
             }
           >
             {arcadeBusy
               ? "Flipping…"
-              : submissionsClosed
-                ? "● Arcade OPEN — reopen submissions"
-                : "● Submissions OPEN — close & open arcade"}
+              : phase === null
+                ? "● Checking the clock…"
+                : phase === "after"
+                  ? "● Arcade OPEN — reopen submissions"
+                  : phase === "before"
+                    ? "● Not open yet — open submissions now"
+                    : "● Submissions OPEN — close & open arcade"}
           </button>
           <button className="ghost-button" onClick={() => router.push("/jury")}>Jury room</button>
           <button className="ghost-button" onClick={handleLogout}>Log out ↗</button>
@@ -485,6 +531,10 @@ export function Dashboard({
             number that actually needs acting on */}
         <StatCard color="violet" icon="⚑" label="Still solo" value={solos.length} detail="Waiting for a team" />
       </section>
+
+      {/* Directly under the stats: the one panel that changes what the public
+          sees, so it is never something you scroll to find. */}
+      <SubmissionWindowPanel window={arcadeWindow} onSaved={setArcadeWindow} />
 
       <section className="night-panel" aria-label="Presential attendance">
         <div className="panel-title">

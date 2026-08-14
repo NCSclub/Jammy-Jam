@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { countGames, listGames } from "@/lib/gallery";
-import { canSeeGames, isSubmissionsClosed } from "@/lib/event-state";
+import { canSeeGames, getSubmissionPhase } from "@/lib/event-state";
 import {
   ArcadeGrid,
   ArcadeLockedShelf,
@@ -58,9 +58,12 @@ export default async function ShelfPage() {
       ) : games.length === 0 ? (
         <ArcadeNotice title="Nothing here yet">
           {/* An empty open shelf means two different things depending on
-              whether the doors are shut: nobody handed a game in, or (in the
-              ARCADE_UNLOCKED dev peek) everyone's games are still coming. */}
-          {(await isSubmissionsClosed())
+              whether the jam is over: nobody handed a game in, or (in the
+              ARCADE_UNLOCKED dev peek) everyone's games are still coming.
+              The phase, not isSubmissionsClosed — that is also true before the
+              jam starts, which would claim nobody submitted in time on a day
+              when nobody could submit at all. */}
+          {(await getSubmissionPhase()) === "after"
             ? "No games were submitted before the doors closed."
             : "The games will show up here once submissions close."}
         </ArcadeNotice>

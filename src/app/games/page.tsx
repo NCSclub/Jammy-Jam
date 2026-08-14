@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { countGames } from "@/lib/gallery";
 import { GALLERY_OPENS_AT } from "@/config/site";
-import { isSubmissionsClosed } from "@/lib/event-state";
+import { getSubmissionWindow } from "@/lib/event-state";
+import { nextBoundary, resolvePhase } from "@/lib/event-window";
 import { ArcadeHeader, ArcadeNotice, ArcadeShell } from "./arcade-parts";
 
 export const metadata: Metadata = {
@@ -22,9 +23,13 @@ export const dynamic = "force-dynamic";
  * shape before and after the deadline.
  */
 export default async function GamesPage() {
-  /* the admin's switch, not the clock — the countdown below is the plan,
-     this is the decision */
-  const open = await isSubmissionsClosed();
+  /* One read, two answers: which of the three states we are in, and the next
+     moment that changes. Both come from what the admin set — the hardcoded
+     date in src/config/site.ts is only the fallback for a hand-driven jam
+     where no closing time was ever entered. */
+  const submissionWindow = await getSubmissionWindow();
+  const phase = resolvePhase(submissionWindow);
+  const deadline = nextBoundary(submissionWindow) ?? GALLERY_OPENS_AT.toISOString();
 
   let count = 0;
   let failed = false;
@@ -37,11 +42,7 @@ export default async function GamesPage() {
 
   return (
     <ArcadeShell sonic>
-      <ArcadeHeader
-        closed={open}
-        count={count}
-        deadline={GALLERY_OPENS_AT.toISOString()}
-      />
+      <ArcadeHeader phase={phase} count={count} deadline={deadline} />
 
       {failed ? (
         <ArcadeNotice title="The arcade is offline">

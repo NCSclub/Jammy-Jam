@@ -3,6 +3,7 @@ import Link from "next/link";
 import CloudField from "@/components/CloudField";
 import { pixelFontVars } from "@/lib/pixel-fonts";
 import { formatBytes } from "@/lib/submission-limits";
+import type { SubmissionPhase } from "@/lib/event-window";
 import ArcadeClock from "./arcade-clock";
 import "./games.css";
 
@@ -107,19 +108,25 @@ export function ArcadeBackdrop() {
  * Title, the deadline clock and the submit button — the reason this page and
  * the submission page are no longer two separate destinations.
  *
+ * Three states, matching the three the server can be in. Before the desk
+ * opens, the clock counts down to that instead and there is no button to press
+ * — a team who arrives early gets a time, not a form that would be refused.
  * While the jam runs, the clock and the button are the point of the page and
- * the shelf below is empty. Once the deadline passes both retire and the games
- * take over, which is why the tally changes wording rather than disappearing.
+ * the shelf below is empty. Once the doors shut both retire and the games take
+ * over, which is why the tally changes wording rather than disappearing.
  */
 export function ArcadeHeader({
-  closed,
+  phase,
   count,
   deadline,
 }: {
-  closed: boolean;
+  phase: SubmissionPhase;
   count: number;
+  /** The next boundary the clock counts to: opening, or closing. */
   deadline: string;
 }) {
+  const closed = phase === "after";
+
   return (
     <header className={`arcade__head${closed ? " arcade__head--closed" : ""}`}>
       <h1 className="arcade__title">
@@ -128,11 +135,15 @@ export function ArcadeHeader({
       <p className="arcade__lede">
         {closed
           ? "Every game built at Jammy Jam. Grab a build and go play it."
-          : "Hand your game in before time runs out, then take a look at what everyone else has built and give their games a try."}
+          : phase === "before"
+            ? "The hand-in desk is not open yet. Come back when the clock runs out and drop your build here."
+            : "Hand your game in before time runs out, then take a look at what everyone else has built and give their games a try."}
       </p>
 
       {closed ? (
         <p className="arcade__closed">Submissions closed</p>
+      ) : phase === "before" ? (
+        <ArcadeClock deadline={deadline} label="Submissions open in" doneLabel="Opening any moment…" />
       ) : (
         <>
           <ArcadeClock deadline={deadline} />

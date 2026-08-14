@@ -1,48 +1,121 @@
 import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase";
-import { isGalleryOpen } from "@/config/site";
+import { GALLERY_OPENS_AT, isGalleryOpen } from "@/config/site";
+import {
+  resolvePhase,
+  type SubmissionPhase,
+  type SubmissionWindow,
+} from "@/lib/event-window";
 
 /**
- * Whether submissions are open is a decision, not a clock.
+ * When submissions are open is a decision the organizers make — either ahead of
+ * time or on the spot.
  *
  * The single row in `event_state` (supabase/event-state.sql) is the source of
- * truth, flipped by the admin dashboard's "Close submissions" button — a jam
- * deadline slips, and an organizer on stage beats an editor over a config
- * file. The countdown on /games still shows the PLANNED deadline; this is
- * what actually decides.
+ * truth for both. `schedule_enabled` picks which one is in charge:
+ *
+ *   off → `submissions_closed`, the dashboard's big button. Somebody clicks,
+ *         the doors move. The original behaviour, kept because an organizer on
+ *         stage beats a clock that is thirty seconds out.
+ *   on  → `submissions_open_at` / `submissions_close_at`. The doors move
+ *         themselves at the times the admin set, which is what you want at
+ *         03:00 when nobody is at a laptop.
  *
  * One flag drives both doors on purpose: the moment submissions close, the
- * shelf unlocks. They were one moment when the clock decided, and splitting
- * them now would open a window where teams can neither submit nor look.
+ * shelf unlocks. Splitting them would open a window where teams can neither
+ * submit nor look.
  */
 
-/** Has the admin closed the doors? */
-export async function isSubmissionsClosed(): Promise<boolean> {
+/** Everything the admin set, as stored. */
+export async function getSubmissionWindow(): Promise<SubmissionWindow> {
   try {
+    /* select * rather than naming the columns: on a database where
+       event-state.sql has not been re-run, asking for submissions_open_at by
+       name is an error and the whole site falls back to the clock. This way
+       the new fields are simply absent and the manual switch keeps working. */
     const { data, error } = await supabaseAdmin()
       .from("event_state")
-      .select("submissions_closed")
+      .select("*")
       .eq("id", true)
       .maybeSingle();
 
     if (error) throw error;
-    if (data) return Boolean(data.submissions_closed);
+    if (data) {
+      return {
+        scheduled: Boolean(data.schedule_enabled),
+        closed: Boolean(data.submissions_closed),
+        opensAt: toIso(data.submissions_open_at),
+        closesAt: toIso(data.submissions_close_at),
+      };
+    }
   } catch {
     /* fall through to the clock */
   }
 
   /* Safety net: if event-state.sql has not been run (or the DB is briefly
-     unreachable), fall back to the planned deadline so the site still behaves
-     sensibly instead of, e.g., accepting builds forever. */
-  return isGalleryOpen();
+     unreachable), fall back to the planned deadline in src/config/site.ts so
+     the site still behaves sensibly instead of, e.g., accepting builds
+     forever. Expressed as a window so every caller below sees one shape. */
+  return {
+    scheduled: false,
+    closed: isGalleryOpen(),
+    opensAt: null,
+    closesAt: GALLERY_OPENS_AT.toISOString(),
+  };
 }
 
-/** The one switch: true closes submissions and unlocks the shelf. */
+/** Postgres hands timestamptz back as a string; anything else is not a time. */
+function toIso(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const at = Date.parse(value);
+  return Number.isNaN(at) ? null : new Date(at).toISOString();
+}
+
+/** before / open / after, resolved against the server's clock — never the
+    visitor's, so winding a laptop forward reopens nothing. */
+export async function getSubmissionPhase(): Promise<SubmissionPhase> {
+  return resolvePhase(await getSubmissionWindow());
+}
+
+/** May a team hand a game in right now? Both "not yet" and "too late" say no. */
+export async function isSubmissionsClosed(): Promise<boolean> {
+  return (await getSubmissionPhase()) !== "open";
+}
+
+/** The one switch: true closes submissions and unlocks the shelf. Writing it
+    also stands the schedule down — clicking the button IS taking manual
+    control, and a schedule that silently reversed the click a minute later
+    would be the worst of both. */
 export async function setSubmissionsClosed(closed: boolean) {
   const { error } = await supabaseAdmin()
     .from("event_state")
-    .upsert({ id: true, submissions_closed: closed, updated_at: new Date().toISOString() });
+    .upsert({
+      id: true,
+      submissions_closed: closed,
+      schedule_enabled: false,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) throw error;
+}
+
+/** Save the schedule. `scheduled: false` parks it without losing the times, so
+    turning it back on does not mean typing both dates again. */
+export async function setSubmissionWindow(patch: {
+  scheduled: boolean;
+  opensAt: string | null;
+  closesAt: string | null;
+}) {
+  const { error } = await supabaseAdmin()
+    .from("event_state")
+    .upsert({
+      id: true,
+      schedule_enabled: patch.scheduled,
+      submissions_open_at: patch.opensAt,
+      submissions_close_at: patch.closesAt,
+      updated_at: new Date().toISOString(),
+    });
 
   if (error) throw error;
 }
@@ -78,13 +151,14 @@ export async function setGradeOutOf(value: number | null) {
 }
 
 /**
- * May this request see the games themselves? Normally the same question as
- * `isSubmissionsClosed()`. ARCADE_UNLOCKED=1 in .env.local is the local
+ * May this request see the games themselves? Only once the jam is over — the
+ * "after" phase, never the "before" one, which is the whole reason a phase
+ * replaced the old boolean. ARCADE_UNLOCKED=1 in .env.local is the local
  * escape hatch: it fills the shelf with real cards for development while the
  * front page keeps its clock and submit button. Server environment only, so
  * no visitor can flip it.
  */
 export async function canSeeGames(): Promise<boolean> {
   if (process.env.ARCADE_UNLOCKED === "1") return true;
-  return isSubmissionsClosed();
+  return (await getSubmissionPhase()) === "after";
 }

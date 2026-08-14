@@ -126,7 +126,52 @@ function put(url: string, file: File, onProgress: (percent: number) => void) {
   });
 }
 
-export default function SubmissionForm() {
+/**
+ * "Submissions are open", with the time left when there is a deadline to
+ * count to.
+ *
+ * The page only renders this form when the desk is open, so the strip is never
+ * a lie — but a team standing over a 400 MB upload wants to see how long they
+ * have, not infer it from the form still being there. Null until the browser
+ * has its own clock, for the usual hydration reason.
+ */
+function OpenStrip({ closesAt }: { closesAt: string | null }) {
+  const [left, setLeft] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!closesAt) return;
+    const target = Date.parse(closesAt);
+    function paint() {
+      const diff = Math.max(0, target - Date.now());
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(minutes / 60);
+      setLeft(
+        diff <= 0
+          ? "closing any moment"
+          : hours
+            ? `${hours}h ${minutes % 60}m left`
+            : `${minutes}m left`,
+      );
+    }
+    paint();
+    const tick = setInterval(paint, 1000);
+    return () => clearInterval(tick);
+  }, [closesAt]);
+
+  return (
+    <p className="jj-open-strip">
+      <span className="jj-open-strip__dot" aria-hidden="true" />
+      Submissions are OPEN{left ? ` — ${left}` : ""}
+    </p>
+  );
+}
+
+export default function SubmissionForm({
+  closesAt = null,
+}: {
+  /** The deadline the page resolved, or null when it closes by hand. */
+  closesAt?: string | null;
+}) {
   const [teamName, setTeamName] = useState("");
   const [gameTitle, setGameTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -286,6 +331,9 @@ export default function SubmissionForm() {
               <p className="jj-hint mt-3">
                 &gt; drop your build before the deadline
               </p>
+              {/* Hidden on the success board — a team that has just handed in
+                  does not need a deadline any more. */}
+              {status === "done" ? null : <OpenStrip closesAt={closesAt} />}
             </header>
 
             {/* Same finish-line strip and runner as the registration form: he
